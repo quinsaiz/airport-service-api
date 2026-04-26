@@ -60,3 +60,19 @@ class Route(models.Model):
 
     def __str__(self) -> str:
         return f"{self.source.name} -> {self.destination.name}"
+
+
+class Flight(models.Model):
+    route = models.ForeignKey("Route", on_delete=models.CASCADE, related_name="flights")
+    airplane = models.ForeignKey(
+        "Airplane", on_delete=models.CASCADE, related_name="flights"
+    )
+    crew = models.ManyToManyField("Crew", related_name="flights")
+    departure_time = models.DateTimeField()
+    arrival_time = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-departure_time"]
+
+    def __str__(self) -> str:
+        return f"{self.route} ({self.departure_time.strftime('%Y-%m-%d %H:%M')})"

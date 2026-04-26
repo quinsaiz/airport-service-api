@@ -1,7 +1,9 @@
 from django.db.models import QuerySet
+from django.utils.dateparse import parse_date
+from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
 from rest_framework import viewsets
 
-from airport.models import Airplane, AirplaneType, Airport, Crew, Route
+from airport.models import Airplane, AirplaneType, Airport, Crew, Route, Flight
 from airport.paginations import DefaultPagination
 from airport.permissions import IsAdminOrReadOnly
 from airport.serializers import (
@@ -10,8 +12,11 @@ from airport.serializers import (
     AirplaneListSerializer,
     AirportSerializer,
     CrewSerializer,
-    RouteListSerializer,
     RouteSerializer,
+    RouteListSerializer,
+    FlightSerializer,
+    FlightListSerializer,
+    FlightDetailSerializer,
 )
 
 
@@ -43,6 +48,22 @@ class CrewViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type=str,
+                description="Filter by source airport name (e.g. Kyiv)",
+            ),
+            OpenApiParameter(
+                "destination",
+                type=str,
+                description="Filter by destination airport name (e.g. Paris)",
+            ),
+        ]
+    )
+)
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.select_related("source", "destination")
     permission_classes = (IsAdminOrReadOnly,)
@@ -67,3 +88,66 @@ class RouteViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return RouteListSerializer
         return RouteSerializer
+
+
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type={"type": "string", "format": "date"},
+                description="Filter by departure date (YYYY-MM-DD)",
+            ),
+            OpenApiParameter(
+                "route",
+                type=int,
+                description="Filter by route id",
+            ),
+            OpenApiParameter(
+                "source",
+                type=str,
+                description="Filter by airport name",
+            ),
+        ]
+    )
+)
+class FlightViewSet(viewsets.ModelViewSet):
+    queryset = (
+        Flight.objects.select_related("route__source", "route__destination", "airplane")
+        .prefetch_related("crew")
+        .order_by("-departure_time")
+    )
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = DefaultPagination
+
+    def get_queryset(self) -> QuerySet[Flight]:
+        """Retrieve flights with optional filtering by date, route ID, and source airport name."""
+
+        queryset = self.queryset
+
+        date = self.request.query_params.get("date")
+        route_id = self.request.query_params.get("route")
+        source = self.request.query_params.get("source")
+
+        if date:
+            departure_date = parse_date(date)
+            if departure_date:
+                queryset = queryset.filter(departure_time__date=departure_date)
+
+        if route_id:
+            try:
+                queryset = queryset.filter(route_id=int(route_id))
+            except (TypeError, ValueError):
+                pass
+
+        if source:
+            queryset = queryset.filter(route__source__name__icontains=source)
+
+        return queryset.distinct()
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return FlightListSerializer
+        if self.action == "retrieve":
+            return FlightDetailSerializer
+        return FlightSerializer

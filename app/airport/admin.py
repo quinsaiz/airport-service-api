@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from airport.models import AirplaneType, Airplane, Airport, Crew, Route
+from airport.models import AirplaneType, Airplane, Airport, Crew, Route, Flight
 
 
 @admin.register(AirplaneType)
@@ -31,3 +31,10 @@ class CrewAdmin(admin.ModelAdmin):
 class RouteAdmin(admin.ModelAdmin):
     list_display = ("source", "destination", "distance")
     list_filter = ("source", "destination")
+
+
+@admin.register(Flight)
+class FlightAdmin(admin.ModelAdmin):
+    list_display = ("route", "airplane", "departure_time", "arrival_time")
+    list_filter = ("departure_time", "route")
+    filter_horizontal = ("crew",)
