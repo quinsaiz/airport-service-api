@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.db import models
 
 
@@ -16,6 +17,10 @@ class Airplane(models.Model):
         AirplaneType, on_delete=models.CASCADE, related_name="airplanes"
     )
 
+    @property
+    def capacity(self) -> int:
+        return self.rows * self.seats_in_row
+
     def __str__(self) -> str:
         return f"{self.name} (Type: {self.airplane_type.name})"
 
@@ -32,8 +37,13 @@ class Crew(models.Model):
     first_name = models.CharField(max_length=55)
     last_name = models.CharField(max_length=55)
 
-    def __str__(self) -> str:
+    @property
+    @admin.display(ordering="first_name", description="Full Name")
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
+
+    def __str__(self) -> str:
+        return self.full_name
 
     class Meta:
         verbose_name_plural = "Crew"

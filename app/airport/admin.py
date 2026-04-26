@@ -10,7 +10,7 @@ class AirplaneTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Airplane)
 class AirplaneAdmin(admin.ModelAdmin):
-    list_display = ("name", "airplane_type", "rows", "seats_in_row")
+    list_display = ("name", "airplane_type", "rows", "seats_in_row", "capacity")
     list_filter = ("airplane_type",)
     search_fields = ("name",)
 
@@ -23,8 +23,8 @@ class AirportAdmin(admin.ModelAdmin):
 
 @admin.register(Crew)
 class CrewAdmin(admin.ModelAdmin):
-    list_display = ("first_name", "last_name")
-    search_fields = ("first_name", "last_name")
+    list_display = ("full_name",)
+    search_fields = ("full_name", "first_name", "last_name")
 
 
 @admin.register(Route)
