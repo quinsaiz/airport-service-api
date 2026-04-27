@@ -1,9 +1,10 @@
 from django.db.models import QuerySet
 from django.utils.dateparse import parse_date
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
+from rest_framework.permissions import IsAuthenticated
 
-from airport.models import Airplane, AirplaneType, Airport, Crew, Route, Flight
+from airport.models import Airplane, AirplaneType, Airport, Crew, Route, Flight, Order
 from airport.paginations import DefaultPagination
 from airport.permissions import IsAdminOrReadOnly
 from airport.serializers import (
@@ -17,6 +18,7 @@ from airport.serializers import (
     FlightSerializer,
     FlightListSerializer,
     FlightDetailSerializer,
+    OrderSerializer,
 )
 
 
@@ -151,3 +153,30 @@ class FlightViewSet(viewsets.ModelViewSet):
         if self.action == "retrieve":
             return FlightDetailSerializer
         return FlightSerializer
+
+
+class OrderViewSet(
+    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
+):
+    queryset = Order.objects.prefetch_related(
+        "tickets__flight__route", "tickets__flight__airplane"
+    )
+    serializer_class = OrderSerializer
+    permission_classes = (IsAuthenticated,)
+    pagination_class = DefaultPagination
+
+    def get_queryset(self) -> QuerySet[Order]:
+        """Return orders for the current user only (unless staff)."""
+
+        queryset = self.queryset
+        user = self.request.user
+
+        if not user.is_staff:
+            queryset = queryset.filter(user=user)
+
+        return queryset.distinct()
+
+    def perform_create(self, serializer: OrderSerializer) -> None:
+        """Assign the order to the current user upon creation."""
+
+        serializer.save(user=self.request.user)

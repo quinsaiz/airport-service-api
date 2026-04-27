@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from airport.models import AirplaneType, Airplane, Airport, Crew, Route, Flight
+from airport.models import (
+    AirplaneType,
+    Airplane,
+    Airport,
+    Crew,
+    Route,
+    Flight,
+    Order,
+    Ticket,
+)
 
 
 @admin.register(AirplaneType)
@@ -38,3 +47,22 @@ class FlightAdmin(admin.ModelAdmin):
     list_display = ("route", "airplane", "departure_time", "arrival_time")
     list_filter = ("departure_time", "route")
     filter_horizontal = ("crew",)
+
+
+@admin.register(Ticket)
+class TicketAdmin(admin.ModelAdmin):
+    list_display = ("flight", "row", "seat", "order")
+    list_filter = ("flight",)
+
+
+class TicketInline(admin.TabularInline):
+    model = Ticket
+    extra = 1
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "user")
+    list_filter = ("created_at",)
+    search_fields = ("user__email",)
+    inlines = (TicketInline,)

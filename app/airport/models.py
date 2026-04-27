@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.contrib import admin
 from django.db import models
+from django.db.models import UniqueConstraint
 
 
 class AirplaneType(models.Model):
@@ -76,3 +78,36 @@ class Flight(models.Model):
 
     def __str__(self) -> str:
         return f"{self.route} ({self.departure_time.strftime('%Y-%m-%d %H:%M')})"
+
+
+class Order(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders"
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.created_at.strftime('%Y-%m-%d %H:%M:%S')} - {self.user.email}"
+
+
+class Ticket(models.Model):
+    row = models.PositiveIntegerField()
+    seat = models.PositiveIntegerField()
+    flight = models.ForeignKey(
+        "Flight", on_delete=models.CASCADE, related_name="tickets"
+    )
+    order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="tickets")
+
+    class Meta:
+        ordering = ["row", "seat"]
+        constraints = [
+            UniqueConstraint(
+                fields=["row", "seat", "flight"], name="unique_row_seat_flight"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.flight} (row: {self.row}, seat: {self.seat})"
