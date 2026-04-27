@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.utils import timezone
 
 
 class AirplaneType(models.Model):
@@ -16,7 +17,7 @@ class Airplane(models.Model):
     rows = models.PositiveIntegerField()
     seats_in_row = models.PositiveIntegerField()
     airplane_type = models.ForeignKey(
-        AirplaneType, on_delete=models.CASCADE, related_name="airplanes"
+        "AirplaneType", on_delete=models.CASCADE, related_name="airplanes"
     )
 
     @property
@@ -53,10 +54,10 @@ class Crew(models.Model):
 
 class Route(models.Model):
     source = models.ForeignKey(
-        Airport, on_delete=models.CASCADE, related_name="departure_routes"
+        "Airport", on_delete=models.CASCADE, related_name="departure_routes"
     )
     destination = models.ForeignKey(
-        Airport, on_delete=models.CASCADE, related_name="arrival_routes"
+        "Airport", on_delete=models.CASCADE, related_name="arrival_routes"
     )
     distance = models.PositiveIntegerField()
 
@@ -108,6 +109,37 @@ class Ticket(models.Model):
                 fields=["row", "seat", "flight"], name="unique_row_seat_flight"
             ),
         ]
+
+    @staticmethod
+    def validate_ticket(
+        row: int, seat: int, flight: Flight, error_to_raise: type[Exception]
+    ) -> None:
+        """
+        Validates the ticket booking:
+        - Checks if the flight hasn't departed yet.
+        - Checks if the chosen row and seat are within the airplane's capacity.
+        """
+
+        if flight.departure_time < timezone.now():
+            raise error_to_raise(
+                {
+                    "departure_time": "Cannot book a ticket for a flight that has already departed."
+                }
+            )
+
+        airplane = flight.airplane
+
+        for ticket_attr_value, ticket_attr_name, airplane_attr_name in [
+            (row, "row", "rows"),
+            (seat, "seat", "seats_in_row"),
+        ]:
+            count_attrs = getattr(airplane, airplane_attr_name)
+            if not (1 <= ticket_attr_value <= count_attrs):
+                raise error_to_raise(
+                    {
+                        ticket_attr_name: f"{ticket_attr_name} must be between 1 and {count_attrs}"
+                    }
+                )
 
     def __str__(self) -> str:
         return f"{self.flight} (row: {self.row}, seat: {self.seat})"

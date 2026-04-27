@@ -1,4 +1,5 @@
-from django.db.models import QuerySet
+from django.db.models import QuerySet, F, Count
+from django.db.models.functions import Greatest
 from django.utils.dateparse import parse_date
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
 from rest_framework import viewsets, mixins
@@ -117,6 +118,13 @@ class FlightViewSet(viewsets.ModelViewSet):
     queryset = (
         Flight.objects.select_related("route__source", "route__destination", "airplane")
         .prefetch_related("crew")
+        .annotate(
+            tickets_available=Greatest(
+                F("airplane__rows") * F("airplane__seats_in_row")
+                - Count("tickets", distinct=True),
+                0,
+            )
+        )
         .order_by("-departure_time")
     )
     permission_classes = (IsAdminOrReadOnly,)
