@@ -167,3 +167,36 @@ SPECTACULAR_SETTINGS = {
     },
     "COMPONENT_SPLIT_PATCH": True,
 }
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "main_formatter": {
+            "format": "{asctime} [{levelname}] {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "main_formatter",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "airport_service_api": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "level": "ERROR",
+            "handlers": ["console"],
+            "propagate": False,
+        },
+    },
+}

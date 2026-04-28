@@ -1,3 +1,5 @@
+import logging
+
 from django.db.models import QuerySet, F, Count
 from django.db.models.functions import Greatest
 from django.utils.dateparse import parse_date
@@ -21,6 +23,8 @@ from airport.serializers import (
     FlightDetailSerializer,
     OrderSerializer,
 )
+
+logger = logging.getLogger("airport_service_api")
 
 
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
@@ -148,6 +152,7 @@ class FlightViewSet(viewsets.ModelViewSet):
             try:
                 queryset = queryset.filter(route_id=int(route_id))
             except (TypeError, ValueError):
+                logger.warning(f"Invalid route_id received: {route_id}")
                 pass
 
         if source:
@@ -187,4 +192,9 @@ class OrderViewSet(
     def perform_create(self, serializer: OrderSerializer) -> None:
         """Assign the order to the current user upon creation."""
 
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        order = serializer.save(user=user)
+
+        logger.info(
+            f"SUCCESS: Order #{order.id} created by user {user.email}"
+        )
