@@ -23,6 +23,7 @@ from airport.serializers import (
     FlightDetailSerializer,
     OrderSerializer,
 )
+from airport.tasks import notify_order_created
 
 logger = logging.getLogger("airport_service_api")
 
@@ -195,6 +196,6 @@ class OrderViewSet(
         user = self.request.user
         order = serializer.save(user=user)
 
-        logger.info(
-            f"SUCCESS: Order #{order.id} created by user {user.email}"
-        )
+        logger.info(f"SUCCESS: Order #{order.id} created by user {user.email}")
+
+        notify_order_created.delay(order.id, user.email)

@@ -8,6 +8,7 @@ from user.serializers import UserSerializer
 
 logger = logging.getLogger("airport_service_api")
 
+
 class CreateUserViewSet(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = (AllowAny,)
