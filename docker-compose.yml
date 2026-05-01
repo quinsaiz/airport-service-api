@@ -1,42 +1,81 @@
 services:
   db:
     image: postgres:17-alpine
-    restart: "no"
+    restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "5432:5432"
+      - "${EXTERNAL_PORT_POSTGRES:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${EXTERNAL_PORT_REDIS:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${EXTERNAL_PORT_RABBITMQ:-5672}:5672"
+      - "${EXTERNAL_PORT_RABBITMQ_MANAGEMENT:-15672}:15672"
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/conf.d/10-custom.conf:ro
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   backend:
     build:
       context: .
+    command: backend
+    restart: unless-stopped
     env_file:
       - .env
     ports:
-      - "8000:8000"
+      - "${EXTERNAL_PORT_BACKEND:-8000}:8000"
     volumes:
-      - ./app:/app
+      - ./app:/app/app
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   celery:
     build: .
-    command: celery -A core worker --loglevel=info
-    volumes:
-      - ./app:/app
+    command: celery
+    restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - ./app:/app/app
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:

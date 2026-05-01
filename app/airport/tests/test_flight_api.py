@@ -6,15 +6,7 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from airport.models import (
-    Airport,
-    Route,
-    AirplaneType,
-    Airplane,
-    Order,
-    Ticket,
-    Crew,
-)
+from airport.models import Airplane, AirplaneType, Airport, Crew, Order, Route, Ticket
 from airport.tests.helpers import sample_flight
 
 FLIGHT_URL = reverse("airport:flight-list")

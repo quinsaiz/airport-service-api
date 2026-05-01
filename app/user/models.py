@@ -1,10 +1,10 @@
-from django.contrib.auth.models import AbstractUser, UserManager as CustomUserManager
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import UserManager as CustomUserManager
 from django.db import models
 
 
 class UserManager(CustomUserManager):
-    """
-    Custom user model manager where email is the unique identifiers
+    """Custom user model manager where email is the unique identifiers
     for authentication instead of usernames.
     """
 
