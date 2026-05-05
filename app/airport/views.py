@@ -25,7 +25,7 @@ from airport.serializers import (
 )
 from airport.tasks import notify_order_created
 
-logger = logging.getLogger("airport_service_api")
+logger = logging.getLogger(__name__)
 
 
 class AirplaneTypeViewSet(viewsets.ModelViewSet):

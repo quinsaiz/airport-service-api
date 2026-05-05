@@ -14,9 +14,9 @@ prepare_app() {
 	python app/manage.py migrate --noinput
 }
 
-wait-for-it --service "${POSTGRES_LINK}" -- echo "[entrypoint] PostgreSQL is up"
-wait-for-it --service "${REDIS_LINK}" -- echo "[entrypoint] Redis is up"
-wait-for-it --service "${RABBITMQ_LINK}" -- echo "[entrypoint] RabbitMQ is up"
+wait-for-it --service "${POSTGRES_HOST}:${POSTGRES_PORT}" -- echo "[entrypoint] PostgreSQL is up"
+wait-for-it --service "${REDIS_HOST}:${REDIS_PORT}" -- echo "[entrypoint] Redis is up"
+wait-for-it --service "${RABBITMQ_HOST}:${RABBITMQ_PORT}" -- echo "[entrypoint] RabbitMQ is up"
 
 if [ "$1" == "backend" ]; then
 	prepare_app

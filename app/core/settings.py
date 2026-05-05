@@ -199,7 +199,12 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "airport_service_api": {
+        "airport": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "user": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
@@ -212,9 +217,21 @@ LOGGING = {
     },
 }
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "amqp://guest:guest@rabbitmq:5672//")
+SITE_DOMAIN = os.environ.get("SITE_DOMAIN", "127.0.0.1")
+EXTERNAL_PORT = os.environ.get("EXTERNAL_PORT_BACKEND", "30000")
+FULL_SITE_DOMAIN = f"{SITE_DOMAIN}:{EXTERNAL_PORT}"
+
+CELERY_BROKER_URL = os.environ.get("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672//")
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_CANCEL_LONG_RUNNING_TASKS_ON_CONNECTION_LOSS = True
 CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "email")
+EMAIL_HOST_USER = os.environ.get("EMAIL_USER", "email")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD", "email")
+EMAIL_PORT = os.environ.get("EMAIL_PORT", "2525")
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+DEFAULT_FROM_EMAIL = "noreply@airport-service.api"

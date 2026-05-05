@@ -70,8 +70,8 @@ class AdminAirportApiTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         airport = Airport.objects.get(pk=res.data["id"])
-        for key in payload:
-            self.assertEqual(payload[key], getattr(airport, key))
+        for key, value in payload.items():
+            self.assertEqual(value, getattr(airport, key))
 
     def test_delete_airport(self):
         airport = sample_airport()
