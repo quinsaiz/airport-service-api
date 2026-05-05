@@ -114,8 +114,7 @@ class Ticket(models.Model):
     def validate_ticket(
         row: int, seat: int, flight: Flight, error_to_raise: type[Exception]
     ) -> None:
-        """
-        Validates the ticket booking:
+        """Validates the ticket booking:
         - Checks if the flight hasn't departed yet.
         - Checks if the chosen row and seat are within the airplane's capacity.
         """

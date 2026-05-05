@@ -1,27 +1,27 @@
 import logging
 
-from django.db.models import QuerySet, F, Count
+from django.db.models import Count, F, QuerySet
 from django.db.models.functions import Greatest
 from django.utils.dateparse import parse_date
-from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
-from rest_framework import viewsets, mixins
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from airport.models import Airplane, AirplaneType, Airport, Crew, Route, Flight, Order
+from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route
 from airport.paginations import DefaultPagination
 from airport.permissions import IsAdminOrReadOnly
 from airport.serializers import (
-    AirplaneTypeSerializer,
-    AirplaneSerializer,
     AirplaneListSerializer,
+    AirplaneSerializer,
+    AirplaneTypeSerializer,
     AirportSerializer,
     CrewSerializer,
-    RouteSerializer,
-    RouteListSerializer,
-    FlightSerializer,
-    FlightListSerializer,
     FlightDetailSerializer,
+    FlightListSerializer,
+    FlightSerializer,
     OrderSerializer,
+    RouteListSerializer,
+    RouteSerializer,
 )
 from airport.tasks import notify_order_created
 
@@ -154,7 +154,6 @@ class FlightViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(route_id=int(route_id))
             except (TypeError, ValueError):
                 logger.warning(f"Invalid route_id received: {route_id}")
-                pass
 
         if source:
             queryset = queryset.filter(route__source__name__icontains=source)

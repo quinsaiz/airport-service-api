@@ -2,16 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from airport.models import (
-    AirplaneType,
-    Airplane,
-    Airport,
-    Crew,
-    Route,
-    Flight,
-    Ticket,
-    Order,
-)
+from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route, Ticket
 
 
 class AirplaneTypeSerializer(serializers.ModelSerializer):
@@ -105,8 +96,7 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = ("id", "row", "seat", "flight")
 
     def validate(self, attrs: dict) -> dict:
-        """
-        Validate that the chosen row and seat are valid
+        """Validate that the chosen row and seat are valid
         for the flight's aircraft capacity.
         """
 

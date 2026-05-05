@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework import routers
 
 from airport.views import (
@@ -6,9 +6,9 @@ from airport.views import (
     AirplaneViewSet,
     AirportViewSet,
     CrewViewSet,
-    RouteViewSet,
     FlightViewSet,
     OrderViewSet,
+    RouteViewSet,
 )
 
 router = routers.DefaultRouter()

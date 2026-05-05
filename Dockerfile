@@ -1,21 +1,18 @@
 FROM python:3.13-slim
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN apt-get update && apt-get install -y \
-    netcat-openbsd \
-    --no-install-recommends \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN uv sync \
+    --no-install-project \
+    # --no-group dev \
+    --frozen
 
-COPY ./app /app
-COPY ./entrypoint.sh /entrypoint.sh
+COPY . .
 
 RUN addgroup --gid 1000 unprivileged && \
     adduser --uid 1000 --gid 1000 --disabled-password --gecos "" unprivileged && \
@@ -23,5 +20,9 @@ RUN addgroup --gid 1000 unprivileged && \
 
 USER unprivileged:unprivileged
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+ENV PYTHONPATH=/app/app
+
+EXPOSE 8000
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["sleep", "infinity"]

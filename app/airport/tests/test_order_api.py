@@ -75,8 +75,7 @@ class OrderApiTest(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_order_atomic_transaction(self):
-        """
-        Verify that no order is created if any ticket within it is invalid.
+        """Verify that no order is created if any ticket within it is invalid.
         Ensures database integrity via atomic transactions.
         """
 

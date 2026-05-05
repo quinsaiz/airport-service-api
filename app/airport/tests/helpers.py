@@ -3,7 +3,7 @@ from typing import Any
 
 from django.utils import timezone
 
-from airport.models import Airport, Flight, Route, AirplaneType, Airplane, Order, Ticket
+from airport.models import Airplane, AirplaneType, Airport, Flight, Route
 
 
 def sample_airport(**params: Any) -> Airport:
