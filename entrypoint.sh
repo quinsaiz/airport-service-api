@@ -39,6 +39,7 @@ elif [ "$1" == "celery" ]; then
 	exec celery \
 		-A core worker \
 		-l info \
+		-Q default,emails \
 		--concurrency=1 \
 		--without-mingle \
 		--without-gossip

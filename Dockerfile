@@ -2,9 +2,9 @@ FROM python:3.13-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-ENV PATH="/app/.venv/bin:$PATH"
-
 WORKDIR /app
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync \
@@ -20,7 +20,7 @@ RUN addgroup --gid 1000 unprivileged && \
 
 USER unprivileged:unprivileged
 
-ENV PYTHONPATH=/app/app
+ENV PYTHONPATH="/app:/app/app"
 
 EXPOSE 8000
 

@@ -14,8 +14,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from user.serializers import UserSerializer
 
 logger = logging.getLogger(__name__)
-
 User = get_user_model()
+
 
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -45,6 +45,7 @@ class VerifyEmailView(APIView):
             return Response({"detail": "Account already active."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"detail": "Invalid or expired link."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer

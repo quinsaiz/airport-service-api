@@ -79,15 +79,7 @@ class FlightDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Flight
-        fields = (
-            "id",
-            "route",
-            "airplane",
-            "crew",
-            "departure_time",
-            "arrival_time",
-            "tickets_available",
-        )
+        fields = ("id", "route", "airplane", "crew", "departure_time", "arrival_time", "tickets_available")
 
 
 class TicketSerializer(serializers.ModelSerializer):

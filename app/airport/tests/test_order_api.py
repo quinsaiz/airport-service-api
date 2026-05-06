@@ -11,17 +11,13 @@ ORDER_URL = reverse("airport:order-list")
 
 class OrderApiTest(APITestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            email="test@test.com", password="password123"
-        )
+        self.user = get_user_model().objects.create_user(email="test@test.com", password="password123")
         self.client.force_authenticate(user=self.user)
 
     def test_list_orders_only_owner(self):
         Order.objects.create(user=self.user)
 
-        other_user = get_user_model().objects.create_user(
-            email="other_test@test.com", password="password123"
-        )
+        other_user = get_user_model().objects.create_user(email="other_test@test.com", password="password123")
         Order.objects.create(user=other_user)
 
         res = self.client.get(ORDER_URL)
@@ -31,12 +27,7 @@ class OrderApiTest(APITestCase):
 
     def test_create_order(self):
         flight = sample_flight()
-        payload = {
-            "tickets": [
-                {"row": 1, "seat": 1, "flight": flight.pk},
-                {"row": 1, "seat": 2, "flight": flight.pk},
-            ]
-        }
+        payload = {"tickets": [{"row": 1, "seat": 1, "flight": flight.pk}, {"row": 1, "seat": 2, "flight": flight.pk}]}
 
         res = self.client.post(ORDER_URL, payload, format="json")
 
@@ -48,11 +39,7 @@ class OrderApiTest(APITestCase):
 
     def test_create_order_invalid_seat(self):
         flight = sample_flight()
-        payload = {
-            "tickets": [
-                {"row": 11, "seat": 1, "flight": flight.pk},
-            ]
-        }
+        payload = {"tickets": [{"row": 11, "seat": 1, "flight": flight.pk}]}
 
         res = self.client.post(ORDER_URL, payload, format="json")
 
@@ -63,11 +50,7 @@ class OrderApiTest(APITestCase):
         """Ensure unique constraint prevents double booking of the same seat."""
 
         flight = sample_flight()
-        payload = {
-            "tickets": [
-                {"row": 1, "seat": 1, "flight": flight.pk},
-            ]
-        }
+        payload = {"tickets": [{"row": 1, "seat": 1, "flight": flight.pk}]}
         self.client.post(ORDER_URL, payload, format="json")
 
         res = self.client.post(ORDER_URL, payload, format="json")
@@ -81,10 +64,7 @@ class OrderApiTest(APITestCase):
 
         flight = sample_flight()
         payload = {
-            "tickets": [
-                {"row": 1, "seat": 1, "flight": flight.pk},
-                {"row": 100, "seat": 1, "flight": flight.pk},
-            ]
+            "tickets": [{"row": 1, "seat": 1, "flight": flight.pk}, {"row": 100, "seat": 1, "flight": flight.pk}]
         }
         res = self.client.post(ORDER_URL, payload, format="json")
 

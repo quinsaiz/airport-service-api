@@ -18,12 +18,8 @@ class PublicFlightApiTests(APITestCase):
         airport_2 = Airport.objects.create(name="Paris", closest_big_city="Paris")
         airport_3 = Airport.objects.create(name="Lviv", closest_big_city="Lviv")
 
-        route_1 = Route.objects.create(
-            source=airport_1, destination=airport_2, distance=2000
-        )
-        route_2 = Route.objects.create(
-            source=airport_3, destination=airport_2, distance=500
-        )
+        route_1 = Route.objects.create(source=airport_1, destination=airport_2, distance=2000)
+        route_2 = Route.objects.create(source=airport_3, destination=airport_2, distance=500)
 
         flight_1 = sample_flight(route=route_1)
         sample_flight(route=route_2)
@@ -38,16 +34,11 @@ class PublicFlightApiTests(APITestCase):
         """Ensure tickets_available is calculated correctly (capacity - booked tickets)."""
 
         airplane = Airplane.objects.create(
-            name="Small",
-            rows=2,
-            seats_in_row=2,
-            airplane_type=AirplaneType.objects.create(name="Cargo"),
+            name="Small", rows=2, seats_in_row=2, airplane_type=AirplaneType.objects.create(name="Cargo")
         )
         flight = sample_flight(airplane=airplane)
 
-        user = get_user_model().objects.create_user(
-            email="test@test.com", password="password123"
-        )
+        user = get_user_model().objects.create_user(email="test@test.com", password="password123")
         order = Order.objects.create(user=user)
 
         Ticket.objects.create(row=1, seat=1, flight=flight, order=order)

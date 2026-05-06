@@ -23,7 +23,7 @@ from airport.serializers import (
     RouteListSerializer,
     RouteSerializer,
 )
-from airport.tasks import notify_order_created
+from airport.tasks import send_ticket_email
 
 logger = logging.getLogger(__name__)
 
@@ -59,16 +59,8 @@ class CrewViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         parameters=[
-            OpenApiParameter(
-                "source",
-                type=str,
-                description="Filter by source airport name (e.g. Kyiv)",
-            ),
-            OpenApiParameter(
-                "destination",
-                type=str,
-                description="Filter by destination airport name (e.g. Paris)",
-            ),
+            OpenApiParameter("source", type=str, description="Filter by source airport name (e.g. Kyiv)"),
+            OpenApiParameter("destination", type=str, description="Filter by destination airport name (e.g. Paris)"),
         ]
     )
 )
@@ -102,32 +94,21 @@ class RouteViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         parameters=[
             OpenApiParameter(
-                "date",
-                type={"type": "string", "format": "date"},
-                description="Filter by departure date (YYYY-MM-DD)",
+                "date", type={"type": "string", "format": "date"}, description="Filter by departure date (YYYY-MM-DD)"
             ),
-            OpenApiParameter(
-                "route",
-                type=int,
-                description="Filter by route id",
-            ),
-            OpenApiParameter(
-                "source",
-                type=str,
-                description="Filter by airport name",
-            ),
+            OpenApiParameter("route", type=int, description="Filter by route id"),
+            OpenApiParameter("source", type=str, description="Filter by airport name"),
         ]
     )
 )
 class FlightViewSet(viewsets.ModelViewSet):
     queryset = (
-        Flight.objects.select_related("route__source", "route__destination", "airplane")
+        Flight.objects
+        .select_related("route__source", "route__destination", "airplane")
         .prefetch_related("crew")
         .annotate(
             tickets_available=Greatest(
-                F("airplane__rows") * F("airplane__seats_in_row")
-                - Count("tickets", distinct=True),
-                0,
+                F("airplane__rows") * F("airplane__seats_in_row") - Count("tickets", distinct=True), 0
             )
         )
         .order_by("-departure_time")
@@ -168,11 +149,11 @@ class FlightViewSet(viewsets.ModelViewSet):
         return FlightSerializer
 
 
-class OrderViewSet(
-    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
-):
-    queryset = Order.objects.prefetch_related(
-        "tickets__flight__route", "tickets__flight__airplane"
+class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Order.objects.select_related("user").prefetch_related(
+        "tickets__flight__route__source",
+        "tickets__flight__route__destination",
+        "tickets__flight__airplane"
     )
     serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)
@@ -192,9 +173,6 @@ class OrderViewSet(
     def perform_create(self, serializer: OrderSerializer) -> None:
         """Assign the order to the current user upon creation."""
 
-        user = self.request.user
-        order = serializer.save(user=user)
+        order = serializer.save(user=self.request.user)
 
-        logger.info(f"SUCCESS: Order #{order.id} created by user {user.email}")
-
-        notify_order_created.delay(order.id, user.email)
+        send_ticket_email.delay(order.id)

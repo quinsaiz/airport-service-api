@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Airport Service!</title>
+    <style>
+        .button {
+            background-color: #007bff;
+            border: none;
+            color: white !important;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .container {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Welcome to Airport Service! ✈️</h2>
+    <p>Hello, {{ user.full_name }}!</p>
+    <p>Thank you for registering. Please click the button below to activate:</p>
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ verification_link }}" class="button">Підтвердити пошту</a>
+    </div>
+    <p>If the button doesn't work, copy this link into your browser:</p>
+    <p style="font-size: 12px; color: #666;">{{ verification_link }}</p>
+    <hr>
+    <p style="font-size: 10px; color: #999;">This is an automated message; there is no need to reply.</p>
+</div>
+</body>
+</html>

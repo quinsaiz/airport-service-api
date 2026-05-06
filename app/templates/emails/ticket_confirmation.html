@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your order has been confirmed!</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+    <h2 style="color: #0056b3; text-align: center;">Your order has been confirmed! ✈️</h2>
+    <p>Hello, <strong>{{ user.email }}</strong>!</p>
+    <p>Thank you for choosing Airport Service. Below are the details of your reservation:</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+        <tr style="background-color: #f8f9fa;">
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Flight</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Row</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Seat</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for ticket in tickets %}
+            <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;">
+                    {{ ticket.flight.route.source.closest_big_city }}
+                    → {{ ticket.flight.route.destination.closest_big_city }}<br>
+                    <small style="color: #666;">{{ ticket.flight.departure_time|date:"d.m.Y H:i" }}</small>
+                </td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{{ ticket.row }}</td>
+                <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{{ ticket.seat }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; text-align: center;">
+        <p style="margin: 0;">We wish you a pleasant flight!</p>
+    </div>
+</div>
+</body>
+</html>
