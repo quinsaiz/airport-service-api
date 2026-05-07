@@ -1,5 +1,12 @@
 FROM python:3.13-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    shared-mime-info \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app

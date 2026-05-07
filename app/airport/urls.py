@@ -9,6 +9,7 @@ from airport.views import (
     FlightViewSet,
     OrderViewSet,
     RouteViewSet,
+    validate_ticket_view,
 )
 
 router = routers.DefaultRouter()
@@ -21,6 +22,9 @@ router.register("routes", RouteViewSet)
 router.register("flights", FlightViewSet)
 router.register("orders", OrderViewSet)
 
-urlpatterns = [path("", include(router.urls))]
+urlpatterns = [
+    path("", include(router.urls)),
+    path("tickets/validate/<str:token>/", validate_ticket_view, name="ticket-validate"),
+]
 
 app_name = "airport"

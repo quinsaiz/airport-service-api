@@ -3,15 +3,23 @@ import logging
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
 from rest_framework.reverse import reverse
+
+from user.verification_token import generate_verification_token
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def build_verification_url(user: "User") -> str:
+    scheme = "https" if not settings.DEBUG else "http"
+    token = generate_verification_token(user.id)
+    relative_url = reverse("user:verify-email", kwargs={"token": token})
+    base_url = getattr(settings, "BASE_URL", "localhost:8000").rstrip("/")
+
+    return f"{scheme}://{base_url}{relative_url}"
 
 
 @shared_task(bind=True, default_retry_delay=300, max_retries=3)
@@ -19,21 +27,22 @@ def send_verification_email(self, user_id: int) -> None:
     try:
         user = User.objects.get(pk=user_id)
 
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
+        if user.first_name and user.last_name:
+            full_name = f"{user.first_name} {user.last_name}"
+        else:
+            full_name = user.email
 
-        relative_link = reverse("user:verify-email", kwargs={"uidb64": uid, "token": token})
-        verification_link = f"http://{settings.FULL_SITE_DOMAIN}{relative_link}"
-
-        subject = "Confirmation of registration at Airport Service"
+        verification_url = build_verification_url(user)
 
         context = {
             "user": user,
-            "verification_link": verification_link,
+            "full_name": full_name,
+            "verification_url": verification_url,
         }
-        html_message = render_to_string("emails/verify_account.html", context)
 
-        text_message = f"Hello! To activate your account, please follow this link: {verification_link}"
+        subject = "Confirmation of registration at Airport Service"
+        html_message = render_to_string("emails/verify_account.html", context)
+        text_message = f"Hello! To activate your account, please follow this link: {verification_url}"
 
         email = EmailMultiAlternatives(
             subject=subject,

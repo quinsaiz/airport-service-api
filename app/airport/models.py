@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
@@ -74,6 +76,7 @@ class Flight(models.Model):
 
 
 class Order(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
 

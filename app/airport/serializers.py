@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -93,12 +94,11 @@ class TicketSerializer(serializers.ModelSerializer):
         """
 
         data = super().validate(attrs)
-
         instance = getattr(self, "instance", None)
 
-        row = attrs.get("row", getattr(instance, "row", None))
-        seat = attrs.get("seat", getattr(instance, "seat", None))
-        flight = attrs.get("flight", getattr(instance, "flight", None))
+        row: int | None = attrs.get("row", getattr(instance, "row", None))
+        seat: int | None = attrs.get("seat", getattr(instance, "seat", None))
+        flight: Flight | None = attrs.get("flight", getattr(instance, "flight", None))
 
         if flight and row and seat:
             Ticket.validate_ticket(row, seat, flight, ValidationError)
@@ -111,8 +111,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ("id", "created_at", "tickets")
-        read_only_fields = ("id", "created_at")
+        fields = ("uuid", "created_at", "tickets")
+        read_only_fields = ("uuid", "created_at")
 
     def create(self, validated_data: dict) -> Order:
         with transaction.atomic():
@@ -120,4 +120,43 @@ class OrderSerializer(serializers.ModelSerializer):
             order = Order.objects.create(**validated_data)
             for ticket in tickets_data:
                 Ticket.objects.create(order=order, **ticket)
+
             return order
+
+
+class TicketValidationFlightSerializer(serializers.ModelSerializer):
+    route_from = serializers.CharField(source="route.source.closest_big_city", read_only=True)
+    route_to = serializers.CharField(source="route.destination.closest_big_city", read_only=True)
+    airplane_name = serializers.CharField(source="airplane.name", read_only=True)
+
+    class Meta:
+        model = Flight
+        fields = ("id", "departure_time", "arrival_time", "route_from", "route_to", "airplane_name")
+
+
+class TicketValidationItemSerializer(serializers.ModelSerializer):
+    flight = TicketValidationFlightSerializer(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
+
+
+class TicketValidationSerializer(serializers.ModelSerializer):
+    passenger = serializers.SerializerMethodField()
+    is_valid = serializers.SerializerMethodField()
+    tickets = TicketValidationItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ("uuid", "created_at", "passenger", "is_valid", "tickets")
+
+    def get_passenger(self, obj: Order) -> str:
+        user = obj.user
+
+        return getattr(user, "full_name", None) or user.email
+
+    def get_is_valid(self, obj: Order) -> bool:
+        now = timezone.now()
+
+        return any(ticket.flight.departure_time >= now for ticket in obj.tickets.all())

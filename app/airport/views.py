@@ -1,11 +1,15 @@
 import logging
 
+import jwt
 from django.db.models import Count, F, QuerySet
 from django.db.models.functions import Greatest
 from django.utils.dateparse import parse_date
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import mixins, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import mixins, viewsets, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route
 from airport.paginations import DefaultPagination
@@ -22,8 +26,10 @@ from airport.serializers import (
     OrderSerializer,
     RouteListSerializer,
     RouteSerializer,
+    TicketValidationSerializer,
 )
 from airport.tasks import send_ticket_email
+from airport.ticket_token import verify_ticket_token
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +140,7 @@ class FlightViewSet(viewsets.ModelViewSet):
             try:
                 queryset = queryset.filter(route_id=int(route_id))
             except (TypeError, ValueError):
-                logger.warning(f"Invalid route_id received: {route_id}")
+                logger.warning("Invalid route_id received: %s", route_id)
 
         if source:
             queryset = queryset.filter(route__source__name__icontains=source)
@@ -151,9 +157,7 @@ class FlightViewSet(viewsets.ModelViewSet):
 
 class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Order.objects.select_related("user").prefetch_related(
-        "tickets__flight__route__source",
-        "tickets__flight__route__destination",
-        "tickets__flight__airplane"
+        "tickets__flight__route__source", "tickets__flight__route__destination", "tickets__flight__airplane"
     )
     serializer_class = OrderSerializer
     permission_classes = (IsAuthenticated,)
@@ -176,3 +180,54 @@ class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gene
         order = serializer.save(user=self.request.user)
 
         send_ticket_email.delay(order.id)
+
+
+@extend_schema(
+    description=(
+        "Public endpoint called when a passenger's QR code is scanned. "
+        "Verifies the signed JWT and returns the order details. "
+    ),
+    responses={
+        200: TicketValidationSerializer,
+        400: {"description": "Token is expired or invalid"},
+        404: {"description": "Order not found"},
+    },
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def validate_ticket_view(request: Request, token: str) -> Response:
+    try:
+        order_id = verify_ticket_token(token)
+    except jwt.ExpiredSignatureError:
+        logger.warning("Expired ticket token presented")
+        return Response(
+            {"detail": "This ticket QR code has expired."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except jwt.InvalidTokenError:
+        logger.warning("Invalid ticket token presented")
+        return Response(
+            {"detail": "Invalid ticket QR code."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        order = (
+            Order.objects
+            .select_related("user")
+            .prefetch_related(
+                "tickets__flight__route__source",
+                "tickets__flight__route__destination",
+                "tickets__flight__airplane",
+            )
+            .get(pk=order_id)
+        )
+    except Order.DoesNotExist:
+        return Response(
+            {"detail": "Order not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    serializer = TicketValidationSerializer(order, context={"request": request})
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
