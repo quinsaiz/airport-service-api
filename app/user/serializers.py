@@ -1,6 +1,7 @@
 from typing import Any
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from rest_framework import serializers
 
 from user.tasks import send_verification_email
@@ -19,8 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Create a new user with encrypted password and email verification."""
 
         user = User.objects.create_user(**validated_data, is_active=False)
-
-        send_verification_email.delay(user.id)
+        transaction.on_commit(lambda: send_verification_email.delay(user.id))
 
         return user
 

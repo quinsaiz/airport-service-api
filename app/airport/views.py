@@ -28,7 +28,6 @@ from airport.serializers import (
     RouteSerializer,
     TicketValidationSerializer,
 )
-from airport.tasks import send_ticket_email
 from airport.ticket_token import verify_ticket_token
 
 logger = logging.getLogger(__name__)
@@ -178,8 +177,6 @@ class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gene
         """Assign the order to the current user upon creation."""
 
         order = serializer.save(user=self.request.user)
-
-        send_ticket_email.delay(order.id)
 
 
 @extend_schema(

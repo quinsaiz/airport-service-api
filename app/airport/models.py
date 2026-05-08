@@ -110,8 +110,8 @@ class Ticket(models.Model):
         airplane = flight.airplane
 
         for ticket_attr_value, ticket_attr_name, airplane_attr_name in [
-            (row, "row", "rows"),
-            (seat, "seat", "seats_in_row"),
+            (row, "Row", "rows"),
+            (seat, "Seat", "seats_in_row"),
         ]:
             count_attrs = getattr(airplane, airplane_attr_name)
             if not (1 <= ticket_attr_value <= count_attrs):

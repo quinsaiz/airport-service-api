@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route, Ticket
-
+from airport.tasks import send_ticket_email
 
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -114,6 +114,14 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ("uuid", "created_at", "tickets")
         read_only_fields = ("uuid", "created_at")
 
+    def validate_tickets(self, value):
+        max_tickets_per_order = 3
+
+        if len(value) > max_tickets_per_order:
+            raise ValidationError(f"You cannot book more than {max_tickets_per_order} tickets in one order.")
+
+        return value
+
     def create(self, validated_data: dict) -> Order:
         with transaction.atomic():
             tickets_data = validated_data.pop("tickets", [])
@@ -121,6 +129,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
             for ticket in tickets_data:
                 Ticket.objects.create(order=order, **ticket)
+
+            transaction.on_commit(lambda: send_ticket_email.delay(order.id))
 
             return order
 
@@ -144,20 +154,16 @@ class TicketValidationItemSerializer(serializers.ModelSerializer):
 
 
 class TicketValidationSerializer(serializers.ModelSerializer):
-    passenger = serializers.SerializerMethodField()
+    passenger_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    passenger_email = serializers.EmailField(source="user.email", read_only=True)
     is_valid = serializers.SerializerMethodField()
     tickets = TicketValidationItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ("uuid", "created_at", "passenger", "is_valid", "tickets")
-
-    def get_passenger(self, obj: Order) -> str:
-        user = obj.user
-
-        return getattr(user, "full_name", None) or user.email
+        fields = ("uuid", "created_at", "passenger_name", "passenger_email", "is_valid", "tickets")
 
     def get_is_valid(self, obj: Order) -> bool:
         now = timezone.now()
 
-        return any(ticket.flight.departure_time >= now for ticket in obj.tickets.all())
+        return obj.tickets.filter(flight__departure_time__gte=now).exists()
