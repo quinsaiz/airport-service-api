@@ -2,6 +2,7 @@ import logging
 
 import jwt
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -28,6 +29,10 @@ class CreateUserView(generics.CreateAPIView):
 class VerifyEmailView(APIView):
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        responses={200: {"type": "object", "properties": {"detail": {"type": "string"}}}},
+        description="Verify user email via JWT token.",
+    )
     def get(self, request: Request, token: str) -> Response:
         try:
             user_id = verify_verification_token(token)

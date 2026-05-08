@@ -14,6 +14,8 @@ import socket
 from datetime import timedelta
 from pathlib import Path
 
+from kombu import Exchange, Queue
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -92,8 +94,8 @@ DATABASES = {
 }
 
 REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
-REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
-REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_HOST}/1"
+REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
 
 CACHES = {
     "default": {
@@ -194,7 +196,7 @@ MAIN_DOMAIN = os.environ.get("MAIN_DOMAIN", "localhost")
 RABBITMQ_USER = os.environ.get("RABBITMQ_USER", "guest")
 RABBITMQ_PASSWORD = os.environ.get("RABBITMQ_PASSWORD", "guest")
 RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
-RABBITMQ_PORT = os.environ.get("RABBITMQ_PORT", "5672")
+RABBITMQ_PORT = int(os.environ.get("RABBITMQ_PORT", "5672"))
 
 CELERY_BROKER_URL = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//"
 CELERY_TIMEZONE = TIME_ZONE
@@ -202,14 +204,17 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_CANCEL_LONG_RUNNING_TASKS_ON_CONNECTION_LOSS = True
 CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
+task_exchange = Exchange("tasks", type="direct")
+CELERY_TASK_QUEUES = (
+    Queue("default", exchange=task_exchange, routing_key="default"),
+    Queue("emails", exchange=task_exchange, routing_key="emails"),
+)
 CELERY_TASK_DEFAULT_QUEUE = "default"
-CELERY_TASK_QUEUES = {
-    "default": {},
-    "emails": {},
-}
+CELERY_TASK_DEFAULT_EXCHANGE = "tasks"
+CELERY_TASK_DEFAULT_ROUTING_KEY = "default"
 CELERY_TASK_ROUTES = {
     "user.tasks.send_verification_email": {"queue": "emails"},
-    "airport.tasks.notify_order_created": {"queue": "emails"},
+    "airport.tasks.send_ticket_email": {"queue": "emails"},
 }
 
 DEFAULT_FROM_EMAIL = f"noreply@{MAIN_DOMAIN}"
@@ -218,6 +223,6 @@ SUPPORT_EMAIL = f"support@{MAIN_DOMAIN}"
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "email")
 EMAIL_HOST_USER = os.environ.get("EMAIL_USER", "email")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD", "email")
-EMAIL_PORT = os.environ.get("EMAIL_PORT", "2525")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "2525"))
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
