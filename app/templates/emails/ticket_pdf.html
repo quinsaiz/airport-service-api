@@ -94,7 +94,7 @@
     </style>
 </head>
 <body>
-{% for ticket in tickets %}
+{% for item in tickets_with_qr %}
     <div class="ticket-box">
         <div class="header">
             <h2>BOARDING PASS</h2>
@@ -104,23 +104,23 @@
             <div class="content">
                 <p>
                     <span class="label">Passenger</span>
-                    <span class="value">{{ passenger_name }}</span>
+                    <span class="value">{{ item.ticket.effective_passenger_name }}</span>
                 </p>
                 <p>
                     <span class="label">Flight Route</span>
-                    <span class="value">{{ ticket.flight.route.source.closest_big_city }} → {{ ticket.flight.route.destination.closest_big_city }}</span>
+                    <span class="value">{{ item.ticket.flight.route.source.closest_big_city }} → {{ item.ticket.flight.route.destination.closest_big_city }}</span>
                 </p>
                 <p>
                     <span class="label">Departure Time</span>
-                    <span class="value">{{ ticket.flight.departure_time|date:"d.m.Y H:i" }}</span>
+                    <span class="value">{{ item.ticket.flight.departure_time|date:"d.m.Y H:i" }}</span>
                 </p>
                 <p>
                     <span class="label">Seat Details</span>
-                    <span class="value">Row {{ ticket.row }}, Seat {{ ticket.seat }}</span>
+                    <span class="value">Row {{ item.ticket.row }}, Seat {{ item.ticket.seat }}</span>
                 </p>
                 <p>
                     <span class="label">Aircraft</span>
-                    <span class="value">{{ ticket.flight.airplane.name }}</span>
+                    <span class="value">{{ item.ticket.flight.airplane.name }}</span>
                 </p>
                 <p>
                     <span class="label">Order ID</span>
@@ -129,7 +129,7 @@
             </div>
 
             <div class="qr-section">
-                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code">
+                <img src="data:image/png;base64,{{ item.qr_code }}" alt="QR Code">
                 <p class="qr-text">OFFICIAL VALIDATION CODE</p>
             </div>
         </div>

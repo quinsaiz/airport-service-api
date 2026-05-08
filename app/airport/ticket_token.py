@@ -13,16 +13,16 @@ TOKEN_LIFETIME_DAYS = 365
 
 
 class TokenPayload(TypedDict):
-    order_id: int
+    ticket_id: int
     iat: int
     exp: int
 
 
-def generate_ticket_token(order_id: int) -> str:
+def generate_ticket_token(ticket_id: int) -> str:
     now = timezone.now()
 
     payload: TokenPayload = {
-        "order_id": order_id,
+        "ticket_id": ticket_id,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(days=TOKEN_LIFETIME_DAYS)).timestamp()),
     }
@@ -37,4 +37,4 @@ def verify_ticket_token(token: str) -> int:
         algorithms=[ALGORITHM],
     )
 
-    return payload["order_id"]
+    return payload["ticket_id"]

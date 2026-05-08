@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def build_validation_url(order_id: int) -> str:
+def build_validation_url(ticket_id: int) -> str:
     scheme = "https" if not settings.DEBUG else "http"
-    token = generate_ticket_token(order_id)
+    token = generate_ticket_token(ticket_id)
     relative_url = reverse("airport:ticket-validate", kwargs={"token": token})
     base_url = getattr(settings, "BASE_URL", "localhost:8000").rstrip("/")
 
@@ -59,37 +59,38 @@ def send_ticket_email(self, order_id: int) -> None:
         user = order.user
         tickets = order.tickets.all()
 
-        if user.first_name and user.last_name:
-            passenger_name = f"{user.first_name} {user.last_name}"
-        else:
-            passenger_name = user.email
+        passenger_name = user.get_full_name() or user.email
 
         short_uuid = str(order.uuid)[:8]
         pdf_filename = f"Ticket_{short_uuid}_{passenger_name}.pdf"
 
-        validation_url = build_validation_url(order_id)
-        qr_base64 = make_qr_png_base64(validation_url)
+        tickets_with_qr = []
+        for ticket in tickets:
+            url = build_validation_url(ticket.id)
+            tickets_with_qr.append({
+                "ticket": ticket,
+                "qr_code": make_qr_png_base64(url),
+                "validation_url": url,
+            })
 
         context = {
             "user": user,
             "passenger_name": passenger_name,
-            "tickets": tickets,
+            "tickets_with_qr": tickets_with_qr,
             "order": order,
             "order_id_display": str(order.uuid)[:8].upper(),
-            "qr_code": qr_base64,
-            "validation_url": validation_url,
             "support_email": settings.SUPPORT_EMAIL,
         }
 
         pdf_html = render_to_string("emails/ticket_pdf.html", context)
         pdf_file = HTML(string=pdf_html).write_pdf()
 
-        subject = f"Your Flight Ticket - Order #{order_id}"
+        subject = f"Your Flight Ticket - Order #{str(order.uuid)[:8].upper()}"
         html_message = render_to_string("emails/ticket_confirmation.html", context)
         text_message = (
-            f"Thank you for your order #{order.id}. "
-            f"Your tickets have been confirmed.\n\n"
-            f"Validate your ticket: {validation_url}"
+            f"Thank you for your order #{str(order.uuid)[:8].upper()}. "
+            f"Your tickets have been confirmed. "
+            f"Please check the attached PDF for your boarding passes."
         )
 
         email = EmailMultiAlternatives(

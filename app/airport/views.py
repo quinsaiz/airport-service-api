@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route
+from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route, Ticket
 from airport.paginations import DefaultPagination
 from airport.permissions import IsAdminOrReadOnly
 from airport.serializers import (
@@ -64,8 +64,8 @@ class CrewViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         parameters=[
-            OpenApiParameter("source", type=str, description="Filter by source airport name (e.g. Kyiv)"),
-            OpenApiParameter("destination", type=str, description="Filter by destination airport name (e.g. Paris)"),
+            OpenApiParameter("source", type=str, description="Filter by source airport name (e.g. Kyiv)."),
+            OpenApiParameter("destination", type=str, description="Filter by destination airport name (e.g. Paris)."),
         ]
     )
 )
@@ -99,10 +99,10 @@ class RouteViewSet(viewsets.ModelViewSet):
     list=extend_schema(
         parameters=[
             OpenApiParameter(
-                "date", type={"type": "string", "format": "date"}, description="Filter by departure date (YYYY-MM-DD)"
+                "date", type={"type": "string", "format": "date"}, description="Filter by departure date (YYYY-MM-DD)."
             ),
-            OpenApiParameter("route", type=int, description="Filter by route id"),
-            OpenApiParameter("source", type=str, description="Filter by airport name"),
+            OpenApiParameter("route", type=int, description="Filter by route id."),
+            OpenApiParameter("source", type=str, description="Filter by airport name."),
         ]
     )
 )
@@ -154,6 +154,17 @@ class FlightViewSet(viewsets.ModelViewSet):
         return FlightSerializer
 
 
+@extend_schema_view(
+    list=extend_schema(description="Returns a list of orders for the current user."),
+    create=extend_schema(
+        description=(
+            "Creates a new order with one or more tickets (max 6). "
+            "Each ticket requires: row, seat, flight. "
+            "passenger_name and passenger_email are optional — "
+            "if not provided, the account holder's details will be used. "
+        )
+    ),
+)
 class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Order.objects.select_related("user").prefetch_related(
         "tickets__flight__route__source", "tickets__flight__route__destination", "tickets__flight__airplane"
@@ -176,7 +187,7 @@ class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gene
     def perform_create(self, serializer: OrderSerializer) -> None:
         """Assign the order to the current user upon creation."""
 
-        order = serializer.save(user=self.request.user)
+        serializer.save(user=self.request.user)
 
 
 @extend_schema(
@@ -194,7 +205,7 @@ class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gene
 @permission_classes([AllowAny])
 def validate_ticket_view(request: Request, token: str) -> Response:
     try:
-        order_id = verify_ticket_token(token)
+        ticket_id = verify_ticket_token(token)
     except jwt.ExpiredSignatureError:
         logger.warning("Expired ticket token presented")
         return Response(
@@ -209,22 +220,18 @@ def validate_ticket_view(request: Request, token: str) -> Response:
         )
 
     try:
-        order = (
-            Order.objects
-            .select_related("user")
-            .prefetch_related(
-                "tickets__flight__route__source",
-                "tickets__flight__route__destination",
-                "tickets__flight__airplane",
-            )
-            .get(pk=order_id)
-        )
-    except Order.DoesNotExist:
+        ticket = Ticket.objects.select_related(
+            "order__user",
+            "flight__route__source",
+            "flight__route__destination",
+            "flight__airplane",
+        ).get(pk=ticket_id)
+    except Ticket.DoesNotExist:
         return Response(
-            {"detail": "Order not found."},
+            {"detail": "Ticket not found."},
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    serializer = TicketValidationSerializer(order, context={"request": request})
+    serializer = TicketValidationSerializer(ticket, context={"request": request})
 
     return Response(serializer.data, status=status.HTTP_200_OK)
