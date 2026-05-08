@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
@@ -16,9 +18,7 @@ class Airplane(models.Model):
     name = models.CharField(max_length=55)
     rows = models.PositiveIntegerField()
     seats_in_row = models.PositiveIntegerField()
-    airplane_type = models.ForeignKey(
-        "AirplaneType", on_delete=models.CASCADE, related_name="airplanes"
-    )
+    airplane_type = models.ForeignKey("AirplaneType", on_delete=models.CASCADE, related_name="airplanes")
 
     @property
     def capacity(self) -> int:
@@ -53,12 +53,8 @@ class Crew(models.Model):
 
 
 class Route(models.Model):
-    source = models.ForeignKey(
-        "Airport", on_delete=models.CASCADE, related_name="departure_routes"
-    )
-    destination = models.ForeignKey(
-        "Airport", on_delete=models.CASCADE, related_name="arrival_routes"
-    )
+    source = models.ForeignKey("Airport", on_delete=models.CASCADE, related_name="departure_routes")
+    destination = models.ForeignKey("Airport", on_delete=models.CASCADE, related_name="arrival_routes")
     distance = models.PositiveIntegerField()
 
     def __str__(self) -> str:
@@ -67,9 +63,7 @@ class Route(models.Model):
 
 class Flight(models.Model):
     route = models.ForeignKey("Route", on_delete=models.CASCADE, related_name="flights")
-    airplane = models.ForeignKey(
-        "Airplane", on_delete=models.CASCADE, related_name="flights"
-    )
+    airplane = models.ForeignKey("Airplane", on_delete=models.CASCADE, related_name="flights")
     crew = models.ManyToManyField("Crew", related_name="flights")
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
@@ -82,10 +76,9 @@ class Flight(models.Model):
 
 
 class Order(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
 
     class Meta:
         ordering = ["-created_at"]
@@ -97,48 +90,32 @@ class Order(models.Model):
 class Ticket(models.Model):
     row = models.PositiveIntegerField()
     seat = models.PositiveIntegerField()
-    flight = models.ForeignKey(
-        "Flight", on_delete=models.CASCADE, related_name="tickets"
-    )
+    flight = models.ForeignKey("Flight", on_delete=models.CASCADE, related_name="tickets")
     order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="tickets")
 
     class Meta:
         ordering = ["row", "seat"]
-        constraints = [
-            UniqueConstraint(
-                fields=["row", "seat", "flight"], name="unique_row_seat_flight"
-            ),
-        ]
+        constraints = [UniqueConstraint(fields=["row", "seat", "flight"], name="unique_row_seat_flight")]
 
     @staticmethod
-    def validate_ticket(
-        row: int, seat: int, flight: Flight, error_to_raise: type[Exception]
-    ) -> None:
+    def validate_ticket(row: int, seat: int, flight: Flight, error_to_raise: type[Exception]) -> None:
         """Validates the ticket booking:
         - Checks if the flight hasn't departed yet.
         - Checks if the chosen row and seat are within the airplane's capacity.
         """
 
         if flight.departure_time < timezone.now():
-            raise error_to_raise(
-                {
-                    "departure_time": "Cannot book a ticket for a flight that has already departed."
-                }
-            )
+            raise error_to_raise({"departure_time": "Cannot book a ticket for a flight that has already departed."})
 
         airplane = flight.airplane
 
         for ticket_attr_value, ticket_attr_name, airplane_attr_name in [
-            (row, "row", "rows"),
-            (seat, "seat", "seats_in_row"),
+            (row, "Row", "rows"),
+            (seat, "Seat", "seats_in_row"),
         ]:
             count_attrs = getattr(airplane, airplane_attr_name)
             if not (1 <= ticket_attr_value <= count_attrs):
-                raise error_to_raise(
-                    {
-                        ticket_attr_name: f"{ticket_attr_name} must be between 1 and {count_attrs}"
-                    }
-                )
+                raise error_to_raise({ticket_attr_name: f"{ticket_attr_name} must be between 1 and {count_attrs}"})
 
     def __str__(self) -> str:
         return f"{self.flight} (row: {self.row}, seat: {self.seat})"

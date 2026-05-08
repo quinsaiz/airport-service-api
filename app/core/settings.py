@@ -14,6 +14,8 @@ import socket
 from datetime import timedelta
 from pathlib import Path
 
+from kombu import Exchange, Queue
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,10 +29,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")]
 
 # Application definition
 
@@ -66,16 +65,16 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ],
+            ]
         },
-    },
+    }
 ]
 
 WSGI_APPLICATION = "core.wsgi.application"
@@ -94,13 +93,15 @@ DATABASES = {
     }
 }
 
+REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/1"
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL", "redis://redis:6379/1"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     }
 }
 
@@ -108,18 +109,10 @@ CACHES = {
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 # Internationalization
@@ -144,9 +137,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "user.User"
 
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
+INTERNAL_IPS = ["127.0.0.1"]
 
 if DEBUG:
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
@@ -154,9 +145,7 @@ if DEBUG:
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
@@ -186,24 +175,13 @@ LOGGING = {
         "main_formatter": {
             "format": "{asctime} [{levelname}] {name}: {message}",
             "style": "{",
-        },
+        }
     },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "main_formatter",
-        },
-    },
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "main_formatter"}},
     "loggers": {
-        "": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "airport_service_api": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
+        "": {"handlers": ["console"], "level": "INFO"},
+        "airport": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "user": {"handlers": ["console"], "level": "INFO", "propagate": False},
         "django.db.backends": {
             "level": "ERROR",
             "handlers": ["console"],
@@ -212,9 +190,39 @@ LOGGING = {
     },
 }
 
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "amqp://guest:guest@rabbitmq:5672//")
+BASE_URL = os.environ.get("BASE_URL", "localhost:30000")
+MAIN_DOMAIN = os.environ.get("MAIN_DOMAIN", "localhost")
+
+RABBITMQ_USER = os.environ.get("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD = os.environ.get("RABBITMQ_PASSWORD", "guest")
+RABBITMQ_HOST = os.environ.get("RABBITMQ_HOST", "rabbitmq")
+RABBITMQ_PORT = int(os.environ.get("RABBITMQ_PORT", "5672"))
+
+CELERY_BROKER_URL = f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}//"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_CANCEL_LONG_RUNNING_TASKS_ON_CONNECTION_LOSS = True
 CELERY_WORKER_ENABLE_REMOTE_CONTROL = False
+task_exchange = Exchange("tasks", type="direct")
+CELERY_TASK_QUEUES = (
+    Queue("default", exchange=task_exchange, routing_key="default"),
+    Queue("emails", exchange=task_exchange, routing_key="emails"),
+)
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_DEFAULT_EXCHANGE = "tasks"
+CELERY_TASK_DEFAULT_ROUTING_KEY = "default"
+CELERY_TASK_ROUTES = {
+    "user.tasks.send_verification_email": {"queue": "emails"},
+    "airport.tasks.send_ticket_email": {"queue": "emails"},
+}
+
+DEFAULT_FROM_EMAIL = f"noreply@{MAIN_DOMAIN}"
+SUPPORT_EMAIL = f"support@{MAIN_DOMAIN}"
+
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "email")
+EMAIL_HOST_USER = os.environ.get("EMAIL_USER", "email")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD", "email")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "2525"))
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

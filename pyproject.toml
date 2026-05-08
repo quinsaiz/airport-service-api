@@ -5,15 +5,17 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "celery>=5.6.3",
-    "django>=6.0.4",
+    "django>=6.0.5",
     "django-redis>=6.0.0",
     "djangorestframework>=3.17.1",
     "djangorestframework-simplejwt>=5.5.1",
     "drf-spectacular>=0.29.0",
-    "psycopg[binary]>=3.3.3",
+    "psycopg[binary]>=3.3.4",
     "redis>=7.4.0",
     "wait-for-it>=2.3.0",
-    "gunicorn>=23.0.0",
+    "gunicorn>=26.0.0",
+    "weasyprint>=68.1",
+    "qrcode[pil]>=8.2",
 ]
 
 [dependency-groups]
@@ -109,7 +111,7 @@ target-version = "py313"
 
 [tool.ruff.format]
 preview = true
-skip-magic-trailing-comma = true
+skip-magic-trailing-comma = false
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -133,3 +135,10 @@ strict = true
 ignore_missing_imports = true
 mypy_path = "app"
 explicit_package_bases = true
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[tool.django-stubs]
+django_settings_module = "core.settings"

@@ -1,9 +1,10 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route, Ticket
-
+from airport.tasks import send_ticket_email
 
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,15 +80,7 @@ class FlightDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Flight
-        fields = (
-            "id",
-            "route",
-            "airplane",
-            "crew",
-            "departure_time",
-            "arrival_time",
-            "tickets_available",
-        )
+        fields = ("id", "route", "airplane", "crew", "departure_time", "arrival_time", "tickets_available")
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -101,12 +94,11 @@ class TicketSerializer(serializers.ModelSerializer):
         """
 
         data = super().validate(attrs)
-
         instance = getattr(self, "instance", None)
 
-        row = attrs.get("row", getattr(instance, "row", None))
-        seat = attrs.get("seat", getattr(instance, "seat", None))
-        flight = attrs.get("flight", getattr(instance, "flight", None))
+        row: int | None = attrs.get("row", getattr(instance, "row", None))
+        seat: int | None = attrs.get("seat", getattr(instance, "seat", None))
+        flight: Flight | None = attrs.get("flight", getattr(instance, "flight", None))
 
         if flight and row and seat:
             Ticket.validate_ticket(row, seat, flight, ValidationError)
@@ -119,13 +111,59 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ("id", "created_at", "tickets")
-        read_only_fields = ("id", "created_at")
+        fields = ("uuid", "created_at", "tickets")
+        read_only_fields = ("uuid", "created_at")
+
+    def validate_tickets(self, value):
+        max_tickets_per_order = 3
+
+        if len(value) > max_tickets_per_order:
+            raise ValidationError(f"You cannot book more than {max_tickets_per_order} tickets in one order.")
+
+        return value
 
     def create(self, validated_data: dict) -> Order:
         with transaction.atomic():
             tickets_data = validated_data.pop("tickets", [])
             order = Order.objects.create(**validated_data)
+
             for ticket in tickets_data:
                 Ticket.objects.create(order=order, **ticket)
+
+            transaction.on_commit(lambda: send_ticket_email.delay(order.id))
+
             return order
+
+
+class TicketValidationFlightSerializer(serializers.ModelSerializer):
+    route_from = serializers.CharField(source="route.source.closest_big_city", read_only=True)
+    route_to = serializers.CharField(source="route.destination.closest_big_city", read_only=True)
+    airplane_name = serializers.CharField(source="airplane.name", read_only=True)
+
+    class Meta:
+        model = Flight
+        fields = ("id", "departure_time", "arrival_time", "route_from", "route_to", "airplane_name")
+
+
+class TicketValidationItemSerializer(serializers.ModelSerializer):
+    flight = TicketValidationFlightSerializer(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
+
+
+class TicketValidationSerializer(serializers.ModelSerializer):
+    passenger_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    passenger_email = serializers.EmailField(source="user.email", read_only=True)
+    is_valid = serializers.SerializerMethodField()
+    tickets = TicketValidationItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ("uuid", "created_at", "passenger_name", "passenger_email", "is_valid", "tickets")
+
+    def get_is_valid(self, obj: Order) -> bool:
+        now = timezone.now()
+
+        return obj.tickets.filter(flight__departure_time__gte=now).exists()

@@ -1,10 +1,17 @@
 FROM python:3.13-slim
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    shared-mime-info \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-ENV PATH="/app/.venv/bin:$PATH"
-
 WORKDIR /app
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync \
@@ -20,7 +27,7 @@ RUN addgroup --gid 1000 unprivileged && \
 
 USER unprivileged:unprivileged
 
-ENV PYTHONPATH=/app/app
+ENV PYTHONPATH="/app:/app/app"
 
 EXPOSE 8000
 

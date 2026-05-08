@@ -9,10 +9,7 @@ TOKEN_URL = reverse("user:token_obtain_pair")
 
 class UserApiTests(APITestCase):
     def test_create_user_success(self):
-        payload = {
-            "email": "test@test.com",
-            "password": "password123",
-        }
+        payload = {"email": "test@test.com", "password": "password123"}
 
         res = self.client.post(USER_CREATE_URL, payload)
 
@@ -50,9 +47,7 @@ class UserApiTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_manage_user_authorized(self):
-        user = get_user_model().objects.create_user(
-            email="test@test.com", password="password123"
-        )
+        user = get_user_model().objects.create_user(email="test@test.com", password="password123")
 
         self.client.force_authenticate(user=user)
 

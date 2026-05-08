@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify your account - Airport Service</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px;">
+<div style="max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+
+    <div style="text-align: center; margin-bottom: 25px;">
+        <h2 style="color: #0056b3; margin: 0;">Welcome to Airport Service! ✈️</h2>
+        <p style="color: #666; font-size: 14px;">Elevate your travel experience</p>
+    </div>
+
+    <p>Hello, <strong>{{ full_name|default:user.email }}</strong>!</p>
+
+    <p>Thank you for joining our service. To get started and book your first flight, please verify your email address to
+        secure your account.</p>
+
+    <div style="text-align: center; margin: 35px 0;">
+        <a href="{{ verification_url }}"
+           style="background-color: #0056b3; color: #ffffff; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 2px 4px rgba(0,86,179,0.3);">
+            Verify your email
+        </a>
+    </div>
+
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="font-size: 13px; color: #555; margin: 0;">
+            <strong>Link not working?</strong> Copy and paste this URL into your browser:<br>
+            <span style="color: #0056b3; word-break: break-all;">{{ verification_url }}</span>
+        </p>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+
+    <div style="text-align: center;">
+        <p style="font-size: 11px; color: #999; margin: 0;">
+            If you did not create an account, you can safely ignore this email.<br>
+            &copy; 2026 Airport Service. All rights reserved.
+        </p>
+    </div>
+</div>
+</body>
+</html>

@@ -22,9 +22,7 @@ class UnauthenticatedAirportApiTests(APITestCase):
 
 class AuthenticatedAirportApiTests(APITestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            email="test@test.com", password="password123"
-        )
+        self.user = get_user_model().objects.create_user(email="test@test.com", password="password123")
         self.client.force_authenticate(user=self.user)
 
     def test_list_airports(self):
@@ -40,10 +38,7 @@ class AuthenticatedAirportApiTests(APITestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_create_airport_forbidden(self):
-        payload = {
-            "name": "Boryspil",
-            "closest_big_city": "Kyiv",
-        }
+        payload = {"name": "Boryspil", "closest_big_city": "Kyiv"}
 
         res = self.client.post(AIRPORT_URL, payload)
 
@@ -52,26 +47,19 @@ class AuthenticatedAirportApiTests(APITestCase):
 
 class AdminAirportApiTests(APITestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            email="test@test.com",
-            password="password123",
-            is_staff=True,
-        )
+        self.user = get_user_model().objects.create_user(email="test@test.com", password="password123", is_staff=True)
         self.client.force_authenticate(user=self.user)
 
     def test_create_airport(self):
-        payload = {
-            "name": "Boryspil",
-            "closest_big_city": "Kyiv",
-        }
+        payload = {"name": "Boryspil", "closest_big_city": "Kyiv"}
 
         res = self.client.post(AIRPORT_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         airport = Airport.objects.get(pk=res.data["id"])
-        for key in payload:
-            self.assertEqual(payload[key], getattr(airport, key))
+        for key, value in payload.items():
+            self.assertEqual(value, getattr(airport, key))
 
     def test_delete_airport(self):
         airport = sample_airport()
