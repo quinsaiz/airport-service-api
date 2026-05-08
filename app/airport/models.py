@@ -92,6 +92,16 @@ class Ticket(models.Model):
     seat = models.PositiveIntegerField()
     flight = models.ForeignKey("Flight", on_delete=models.CASCADE, related_name="tickets")
     order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="tickets")
+    passenger_name = models.CharField(max_length=110, blank=True)
+    passenger_email = models.EmailField(blank=True)
+
+    @property
+    def effective_passenger_name(self) -> str:
+        return self.passenger_name or self.order.user.get_full_name() or self.order.user.email
+
+    @property
+    def effective_passenger_email(self) -> str:
+        return self.passenger_email or self.order.user.email
 
     class Meta:
         ordering = ["row", "seat"]

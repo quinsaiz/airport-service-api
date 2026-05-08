@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route, Ticket
 from airport.tasks import send_ticket_email
 
+
 class AirplaneTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AirplaneType
@@ -84,9 +85,18 @@ class FlightDetailSerializer(serializers.ModelSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    passenger_name = serializers.CharField(
+        required=False, allow_blank=True, help_text="Optional. If not provided, the account holder's name will be used."
+    )
+    passenger_email = serializers.EmailField(
+        required=False,
+        allow_blank=True,
+        help_text="Optional. If not provided, the account holder's email will be used.",
+    )
+
     class Meta:
         model = Ticket
-        fields = ("id", "row", "seat", "flight")
+        fields = ("id", "row", "seat", "flight", "passenger_name", "passenger_email")
 
     def validate(self, attrs: dict) -> dict:
         """Validate that the chosen row and seat are valid
@@ -115,7 +125,7 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ("uuid", "created_at")
 
     def validate_tickets(self, value):
-        max_tickets_per_order = 3
+        max_tickets_per_order = 6
 
         if len(value) > max_tickets_per_order:
             raise ValidationError(f"You cannot book more than {max_tickets_per_order} tickets in one order.")
@@ -136,8 +146,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class TicketValidationFlightSerializer(serializers.ModelSerializer):
-    route_from = serializers.CharField(source="route.source.closest_big_city", read_only=True)
-    route_to = serializers.CharField(source="route.destination.closest_big_city", read_only=True)
+    route_from = serializers.CharField(source="route.source.name", read_only=True)
+    route_to = serializers.CharField(source="route.destination.name", read_only=True)
     airplane_name = serializers.CharField(source="airplane.name", read_only=True)
 
     class Meta:
@@ -145,25 +155,16 @@ class TicketValidationFlightSerializer(serializers.ModelSerializer):
         fields = ("id", "departure_time", "arrival_time", "route_from", "route_to", "airplane_name")
 
 
-class TicketValidationItemSerializer(serializers.ModelSerializer):
+class TicketValidationSerializer(serializers.ModelSerializer):
+    order_uuid = serializers.UUIDField(source="order.uuid", read_only=True)
+    passenger_name = serializers.CharField(source="effective_passenger_name", read_only=True)
+    passenger_email = serializers.EmailField(source="effective_passenger_email", read_only=True)
+    is_valid = serializers.SerializerMethodField()
     flight = TicketValidationFlightSerializer(read_only=True)
 
     class Meta:
         model = Ticket
-        fields = ("id", "row", "seat", "flight")
+        fields = ("order_uuid", "passenger_name", "passenger_email", "id", "is_valid", "row", "seat", "flight")
 
-
-class TicketValidationSerializer(serializers.ModelSerializer):
-    passenger_name = serializers.CharField(source="user.get_full_name", read_only=True)
-    passenger_email = serializers.EmailField(source="user.email", read_only=True)
-    is_valid = serializers.SerializerMethodField()
-    tickets = TicketValidationItemSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Order
-        fields = ("uuid", "created_at", "passenger_name", "passenger_email", "is_valid", "tickets")
-
-    def get_is_valid(self, obj: Order) -> bool:
-        now = timezone.now()
-
-        return obj.tickets.filter(flight__departure_time__gte=now).exists()
+    def get_is_valid(self, obj: Ticket) -> bool:
+        return obj.flight.departure_time >= timezone.now()
