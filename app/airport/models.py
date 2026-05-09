@@ -20,12 +20,12 @@ class Airplane(models.Model):
     seats_in_row = models.PositiveIntegerField()
     airplane_type = models.ForeignKey("AirplaneType", on_delete=models.CASCADE, related_name="airplanes")
 
+    def __str__(self) -> str:
+        return f"{self.name} (Type: {self.airplane_type.name})"
+
     @property
     def capacity(self) -> int:
         return self.rows * self.seats_in_row
-
-    def __str__(self) -> str:
-        return f"{self.name} (Type: {self.airplane_type.name})"
 
 
 class Airport(models.Model):
@@ -40,16 +40,16 @@ class Crew(models.Model):
     first_name = models.CharField(max_length=55)
     last_name = models.CharField(max_length=55)
 
-    @property
-    @admin.display(ordering="first_name", description="Full Name")
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
+    class Meta:
+        verbose_name_plural = "Crew"
 
     def __str__(self) -> str:
         return self.full_name
 
-    class Meta:
-        verbose_name_plural = "Crew"
+    @property
+    @admin.display(ordering="first_name", description="Full Name")
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
 
 
 class Route(models.Model):
@@ -64,7 +64,7 @@ class Route(models.Model):
 class Flight(models.Model):
     route = models.ForeignKey("Route", on_delete=models.CASCADE, related_name="flights")
     airplane = models.ForeignKey("Airplane", on_delete=models.CASCADE, related_name="flights")
-    crew = models.ManyToManyField("Crew", related_name="flights")
+    crew: models.ManyToManyField = models.ManyToManyField("Crew", related_name="flights")
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
 
@@ -95,17 +95,12 @@ class Ticket(models.Model):
     passenger_name = models.CharField(max_length=110, blank=True)
     passenger_email = models.EmailField(blank=True)
 
-    @property
-    def effective_passenger_name(self) -> str:
-        return self.passenger_name or self.order.user.get_full_name() or self.order.user.email
-
-    @property
-    def effective_passenger_email(self) -> str:
-        return self.passenger_email or self.order.user.email
-
     class Meta:
         ordering = ["row", "seat"]
         constraints = [UniqueConstraint(fields=["row", "seat", "flight"], name="unique_row_seat_flight")]
+
+    def __str__(self) -> str:
+        return f"{self.flight} (row: {self.row}, seat: {self.seat})"
 
     @staticmethod
     def validate_ticket(row: int, seat: int, flight: Flight, error_to_raise: type[Exception]) -> None:
@@ -127,5 +122,10 @@ class Ticket(models.Model):
             if not (1 <= ticket_attr_value <= count_attrs):
                 raise error_to_raise({ticket_attr_name: f"{ticket_attr_name} must be between 1 and {count_attrs}"})
 
-    def __str__(self) -> str:
-        return f"{self.flight} (row: {self.row}, seat: {self.seat})"
+    @property
+    def effective_passenger_name(self) -> str:
+        return self.passenger_name or self.order.user.get_full_name() or self.order.user.email
+
+    @property
+    def effective_passenger_email(self) -> str:
+        return self.passenger_email or self.order.user.email

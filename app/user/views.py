@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 import jwt
 from django.contrib.auth import get_user_model
@@ -7,6 +8,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -21,7 +23,7 @@ class CreateUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = (AllowAny,)
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: BaseSerializer) -> None:
         user = serializer.save()
         logger.info("New user registered: %s (ID: %s)", user.email, user.id)
 
@@ -57,5 +59,5 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def get_object(self):
+    def get_object(self) -> Any:
         return self.request.user

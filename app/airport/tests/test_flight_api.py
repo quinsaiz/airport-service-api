@@ -1,7 +1,6 @@
 import datetime
 
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
@@ -13,7 +12,7 @@ FLIGHT_URL = reverse("airport:flight-list")
 
 
 class PublicFlightApiTests(APITestCase):
-    def test_filter_flights_by_source(self):
+    def test_filter_flights_by_source(self) -> None:
         airport_1 = Airport.objects.create(name="Kyiv", closest_big_city="Kyiv")
         airport_2 = Airport.objects.create(name="Paris", closest_big_city="Paris")
         airport_3 = Airport.objects.create(name="Lviv", closest_big_city="Lviv")
@@ -30,7 +29,7 @@ class PublicFlightApiTests(APITestCase):
         self.assertEqual(len(res.data["results"]), 1)
         self.assertEqual(res.data["results"][0]["id"], flight_1.pk)
 
-    def test_tickets_available_count(self):
+    def test_tickets_available_count(self) -> None:
         """Ensure tickets_available is calculated correctly (capacity - booked tickets)."""
 
         airplane = Airplane.objects.create(
@@ -49,10 +48,9 @@ class PublicFlightApiTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["results"][0]["tickets_available"], 2)
 
-    def test_filter_flights_by_date(self):
+    def test_filter_flights_by_date(self) -> None:
         date_str = "2026-05-27"
-        naive_datetime = datetime.datetime(2026, 5, 27, 10, 0)
-        departure_time = timezone.make_aware(naive_datetime)
+        departure_time = datetime.datetime(2026, 5, 27, 10, 0, tzinfo=datetime.UTC)
 
         flight_1 = sample_flight(departure_time=departure_time)
         sample_flight(departure_time=departure_time + datetime.timedelta(days=1))
@@ -63,7 +61,7 @@ class PublicFlightApiTests(APITestCase):
         self.assertEqual(len(res.data["results"]), 1)
         self.assertEqual(res.data["results"][0]["id"], flight_1.pk)
 
-    def test_flight_detail_view(self):
+    def test_flight_detail_view(self) -> None:
         """Ensure detailed flight view returns nested airplane and crew data."""
 
         flight = sample_flight()

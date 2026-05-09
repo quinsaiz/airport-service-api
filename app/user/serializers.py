@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "is_staff")
         extra_kwargs = {"password": {"write_only": True, "min_length": 6, "style": {"input_type": "password"}}}
 
-    def create(self, validated_data: dict[str, Any]) -> User:
+    def create(self, validated_data: dict[str, Any]) -> Any:
         """Create a new user with encrypted password and email verification."""
 
         user = User.objects.create_user(**validated_data, is_active=False)
@@ -24,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
-    def update(self, instance: User, validated_data: dict[str, Any]) -> User:
+    def update(self, instance: Any, validated_data: dict[str, Any]) -> Any:
         """Update a user with encrypted password."""
 
         password = validated_data.pop("password", None)

@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -21,7 +23,7 @@ class AirplaneSerializer(serializers.ModelSerializer):
 
 
 class AirplaneListSerializer(AirplaneSerializer):
-    airplane_type = serializers.SlugRelatedField(slug_field="name", read_only=True)
+    airplane_type: serializers.SlugRelatedField = serializers.SlugRelatedField(slug_field="name", read_only=True)
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -98,7 +100,7 @@ class TicketSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = ("id", "row", "seat", "flight", "passenger_name", "passenger_email")
 
-    def validate(self, attrs: dict) -> dict:
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """Validate that the chosen row and seat are valid
         for the flight's aircraft capacity.
         """
@@ -124,11 +126,13 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ("uuid", "created_at", "tickets")
         read_only_fields = ("uuid", "created_at")
 
-    def validate_tickets(self, value):
+    def validate_tickets(self, value: list) -> list:
         max_tickets_per_order = 6
 
         if len(value) > max_tickets_per_order:
-            raise ValidationError(f"You cannot book more than {max_tickets_per_order} tickets in one order.")
+            msg = f"You cannot book more than {max_tickets_per_order} tickets in one order."
+
+            raise ValidationError(msg)
 
         return value
 
@@ -155,7 +159,7 @@ class TicketValidationFlightSerializer(serializers.ModelSerializer):
         fields = ("id", "departure_time", "arrival_time", "route_from", "route_to", "airplane_name")
 
 
-class TicketValidationSerializer(serializers.ModelSerializer):
+class TicketValidationSerializer(serializers.ModelSerializer[Ticket]):
     order_uuid = serializers.UUIDField(source="order.uuid", read_only=True)
     passenger_name = serializers.CharField(source="effective_passenger_name", read_only=True)
     passenger_email = serializers.EmailField(source="effective_passenger_email", read_only=True)

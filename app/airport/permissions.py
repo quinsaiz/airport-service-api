@@ -1,6 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.request import Request
-from rest_framework.views import View
+from rest_framework.views import APIView
 
 
 class IsAdminOrReadOnly(BasePermission):
@@ -8,5 +8,5 @@ class IsAdminOrReadOnly(BasePermission):
     POST, PUT, PATCH, and DELETE requests are restricted to administrators.
     """
 
-    def has_permission(self, request: Request, view: View) -> bool:
+    def has_permission(self, request: Request, view: APIView) -> bool:
         return bool(request.method in SAFE_METHODS or (request.user and request.user.is_staff))

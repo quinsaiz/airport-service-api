@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import TypedDict
+from typing import Any
 
 import jwt
 from django.conf import settings
@@ -12,16 +12,10 @@ ALGORITHM = "HS256"
 TOKEN_LIFETIME_DAYS = 365
 
 
-class TokenPayload(TypedDict):
-    ticket_id: int
-    iat: int
-    exp: int
-
-
 def generate_ticket_token(ticket_id: int) -> str:
     now = timezone.now()
 
-    payload: TokenPayload = {
+    payload: dict[str, Any] = {
         "ticket_id": ticket_id,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(days=TOKEN_LIFETIME_DAYS)).timestamp()),
@@ -31,10 +25,10 @@ def generate_ticket_token(ticket_id: int) -> str:
 
 
 def verify_ticket_token(token: str) -> int:
-    payload: TokenPayload = jwt.decode(
+    payload: dict[str, Any] = jwt.decode(
         token,
         settings.SECRET_KEY,
         algorithms=[ALGORITHM],
     )
 
-    return payload["ticket_id"]
+    return int(payload["ticket_id"])
