@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Any
 
 import jwt
 from django.conf import settings
@@ -22,9 +23,9 @@ def generate_verification_token(user_id: int) -> str:
 
 
 def verify_verification_token(token: str) -> int:
-    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+    payload: dict[str, Any] = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
 
     if payload.get("purpose") != "email_verification":
         raise jwt.InvalidTokenError("Wrong token purpose")
 
-    return payload["user_id"]
+    return int(payload["user_id"])

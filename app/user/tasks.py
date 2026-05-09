@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from celery import shared_task
 from django.conf import settings
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def build_verification_url(user: "User") -> str:
+def build_verification_url(user: Any) -> str:
     scheme = "https" if not settings.DEBUG else "http"
     token = generate_verification_token(user.id)
     relative_url = reverse("user:verify-email", kwargs={"token": token})
@@ -23,14 +24,11 @@ def build_verification_url(user: "User") -> str:
 
 
 @shared_task(bind=True, default_retry_delay=300, max_retries=3)
-def send_verification_email(self, user_id: int) -> None:
+def send_verification_email(self: Any, user_id: int) -> None:
     try:
         user = User.objects.get(pk=user_id)
 
-        if user.first_name and user.last_name:
-            full_name = f"{user.first_name} {user.last_name}"
-        else:
-            full_name = user.email
+        full_name = f"{user.first_name} {user.last_name}" if user.first_name and user.last_name else user.email
 
         verification_url = build_verification_url(user)
 
@@ -56,7 +54,7 @@ def send_verification_email(self, user_id: int) -> None:
         logger.info("Verification email sent to %s", user.email)
 
     except User.DoesNotExist:
-        logger.error("User with id %s does not exist", user_id)
+        logger.exception("User with id %s does not exist", user_id)
     except Exception as exc:
-        logger.error("Error sending email for user_id %s. Retrying...", user_id)
-        raise self.retry(exc=exc)
+        logger.exception("Error sending email for user_id %s. Retrying...", user_id)
+        raise self.retry(exc=exc) from exc

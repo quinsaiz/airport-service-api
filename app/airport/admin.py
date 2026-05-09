@@ -60,11 +60,11 @@ class TicketInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     @admin.display(description="Order ID")
-    def id_display(self, obj):
+    def id_display(self, obj: Order) -> str:
         return str(obj.uuid)[:8]
 
     @admin.display(description="Created At")
-    def created_at_formatted(self, obj):
+    def created_at_formatted(self, obj: Order) -> str:
         return obj.created_at.strftime("%Y-%m-%d %H:%M")
 
     list_display = ("id_display", "user", "created_at_formatted")

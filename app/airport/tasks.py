@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+from typing import Any
 
 import qrcode
 from celery import shared_task
@@ -45,7 +46,7 @@ def make_qr_png_base64(data: str) -> str:
 
 
 @shared_task(bind=True, default_retry_delay=30, max_retries=3)
-def send_ticket_email(self, order_id: int) -> None:
+def send_ticket_email(self: Any, order_id: int) -> None:
     try:
         order = (
             Order.objects
@@ -106,7 +107,7 @@ def send_ticket_email(self, order_id: int) -> None:
         logger.info("Ticket email sent for Order #%s to %s", order_id, user.email)
 
     except Order.DoesNotExist:
-        logger.error("Order with id %s not found", order_id)
+        logger.exception("Order with id %s not found", order_id)
     except Exception as exc:
-        logger.error("Error sending email for Order %s. Retrying...", order_id)
-        raise self.retry(exc=exc)
+        logger.exception("Error sending email for Order %s. Retrying...", order_id)
+        raise self.retry(exc=exc) from exc

@@ -1,16 +1,18 @@
+from typing import Any
+
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager as CustomUserManager
 from django.db import models
 
 
-class UserManager(CustomUserManager):
+class UserManager(CustomUserManager["User"]):
     """Custom user model manager where email is the unique identifiers
     for authentication instead of usernames.
     """
 
     use_in_migrations = True
 
-    def _create_user(self, email, password, **extra_fields):
+    def _create_user(self, email: str, password: str | None, **extra_fields: Any) -> "User":
         if not email:
             raise ValueError("Email must be set")
 
@@ -20,16 +22,20 @@ class UserManager(CustomUserManager):
         user.save(using=self._db)
         return user
 
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(
+        self, username: str | None = None, email: str | None = None, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         if not password:
             raise ValueError("Password must be set")
 
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
 
-        return self._create_user(email, password, **extra_fields)
+        return self._create_user(email or "", password, **extra_fields)
 
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(
+        self, username: str | None = None, email: str | None = None, password: str | None = None, **extra_fields: Any
+    ) -> "User":
         if not password:
             raise ValueError("Superuser must have a password")
 
@@ -41,7 +47,7 @@ class UserManager(CustomUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self._create_user(email, password, **extra_fields)
+        return self._create_user(email or "", password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -53,5 +59,5 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    def __str__(self):
-        return self.email
+    def __str__(self) -> str:
+        return str(self.email)

@@ -5,11 +5,12 @@ from django.db.models import Count, F, QuerySet
 from django.db.models.functions import Greatest
 from django.utils.dateparse import parse_date
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import mixins, viewsets, status
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 
 from airport.models import Airplane, AirplaneType, Airport, Crew, Flight, Order, Route, Ticket
 from airport.paginations import DefaultPagination
@@ -43,7 +44,7 @@ class AirplaneViewSet(viewsets.ModelViewSet):
     queryset = Airplane.objects.select_related("airplane_type")
     permission_classes = (IsAdminOrReadOnly,)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[serializers.BaseSerializer]:
         if self.action in ("list", "retrieve"):
             return AirplaneListSerializer
         return AirplaneSerializer
@@ -89,7 +90,7 @@ class RouteViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[serializers.BaseSerializer]:
         if self.action in ("list", "retrieve"):
             return RouteListSerializer
         return RouteSerializer
@@ -146,7 +147,7 @@ class FlightViewSet(viewsets.ModelViewSet):
 
         return queryset.distinct()
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[serializers.BaseSerializer]:
         if self.action == "list":
             return FlightListSerializer
         if self.action == "retrieve":
@@ -184,7 +185,7 @@ class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Gene
 
         return queryset.distinct()
 
-    def perform_create(self, serializer: OrderSerializer) -> None:
+    def perform_create(self, serializer: BaseSerializer) -> None:
         """Assign the order to the current user upon creation."""
 
         serializer.save(user=self.request.user)
