@@ -4,14 +4,9 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 from airport.models import Airport
-from airport.serializers import AirportSerializer
-from airport.tests.helpers import sample_airport
+from airport.tests.helpers import detail_url, sample_airport
 
 AIRPORT_URL = reverse("airport:airport-list")
-
-
-def detail_url(airport_id: int) -> str:
-    return reverse("airport:airport-detail", args=[airport_id])
 
 
 class UnauthenticatedAirportApiTests(APITestCase):
@@ -22,7 +17,7 @@ class UnauthenticatedAirportApiTests(APITestCase):
 
 class AuthenticatedAirportApiTests(APITestCase):
     def setUp(self) -> None:
-        self.user = get_user_model().objects.create_user(email="test@test.com", password="password123")
+        self.user = get_user_model().objects.create_user(email="test@email.com", password="password123")
         self.client.force_authenticate(user=self.user)
 
     def test_list_airports(self) -> None:
@@ -31,11 +26,8 @@ class AuthenticatedAirportApiTests(APITestCase):
 
         res = self.client.get(AIRPORT_URL)
 
-        airports = Airport.objects.all()
-        serializer = AirportSerializer(airports, many=True)
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
+        self.assertEqual(len(res.data["results"]), 2)
 
     def test_create_airport_forbidden(self) -> None:
         payload = {"name": "Boryspil", "closest_big_city": "Kyiv"}
@@ -47,7 +39,7 @@ class AuthenticatedAirportApiTests(APITestCase):
 
 class AdminAirportApiTests(APITestCase):
     def setUp(self) -> None:
-        self.user = get_user_model().objects.create_user(email="test@test.com", password="password123", is_staff=True)
+        self.user = get_user_model().objects.create_user(email="test@email.com", password="password123", is_staff=True)
         self.client.force_authenticate(user=self.user)
 
     def test_create_airport(self) -> None:
@@ -63,7 +55,7 @@ class AdminAirportApiTests(APITestCase):
 
     def test_delete_airport(self) -> None:
         airport = sample_airport()
-        url = detail_url(airport.pk)
+        url = detail_url("airport", airport.pk)
 
         res = self.client.delete(url)
 

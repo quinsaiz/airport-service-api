@@ -41,8 +41,9 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.select_related("airplane_type")
+    queryset = Airplane.objects.select_related("airplane_type").order_by("id")
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = DefaultPagination
 
     def get_serializer_class(self) -> type[serializers.BaseSerializer]:
         if self.action in ("list", "retrieve"):
@@ -51,15 +52,17 @@ class AirplaneViewSet(viewsets.ModelViewSet):
 
 
 class AirportViewSet(viewsets.ModelViewSet):
-    queryset = Airport.objects.all()
+    queryset = Airport.objects.order_by("id")
     serializer_class = AirportSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = DefaultPagination
 
 
 class CrewViewSet(viewsets.ModelViewSet):
-    queryset = Crew.objects.all()
+    queryset = Crew.objects.order_by("last_name", "first_name")
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = DefaultPagination
 
 
 @extend_schema_view(
@@ -71,7 +74,7 @@ class CrewViewSet(viewsets.ModelViewSet):
     )
 )
 class RouteViewSet(viewsets.ModelViewSet):
-    queryset = Route.objects.select_related("source", "destination")
+    queryset = Route.objects.select_related("source", "destination").order_by("id")
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = DefaultPagination
 
