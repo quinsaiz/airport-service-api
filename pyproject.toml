@@ -22,9 +22,9 @@ dependencies = [
 dev = [
     "celery-types>=0.26.0",
     "django-debug-toolbar>=6.3.0",
-    "django-stubs>=6.0.3",
+    "django-stubs>=6.0.4",
     "djangorestframework-stubs>=3.16.9",
-    "mypy>=1.20.2",
+    "mypy>=2.1.0",
     "ruff>=0.15.12",
     "whitenoise>=6.12.0",
 ]
@@ -105,8 +105,8 @@ lint.ignore = [
     "UP047", # pyupgrade - use `X | Y` for union type annotations (py3.10+)
     "ERA001", # eradicate - commented-out code
     "TRY003", # Avoid specifying long messages outside the exception class
-    "EM101",  # Exception must not use a string literal
-    "EM102",  # Exception must not use an f-string literal
+    "EM101", # Exception must not use a string literal
+    "EM102", # Exception must not use an f-string literal
 ]
 lint.select = ["ALL"]
 src = ["app"]
