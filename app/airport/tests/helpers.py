@@ -72,6 +72,7 @@ def sample_flight(**params: Any) -> Flight:
 
     return Flight.objects.create(**defaults)
 
+
 def sample_ticket(flight: Flight, order: Order, **params: Any) -> Ticket:
     defaults = {"row": 1, "seat": 1, "flight": flight, "order": order}
     defaults.update(params)

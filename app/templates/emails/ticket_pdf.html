@@ -1,143 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>BOARDING PASS</title>
-    <style>
-        @page {
-            size: A4;
-            margin: 1cm;
-        }
+  <meta charset="UTF-8">
+  <title>BOARDING PASS</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1cm;
+    }
 
-        body {
-            font-family: DejaVu Sans, sans-serif;
-            color: #333;
-            background-color: #fff;
-        }
+    body {
+      font-family: DejaVu Sans, sans-serif;
+      color: #333;
+      background-color: #fff;
+    }
 
-        .ticket-box {
-            border: 2px solid #0056b3;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            background-color: #ffffff;
-        }
+    .ticket-box {
+      border: 2px solid #0056b3;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      background-color: #ffffff;
+    }
 
-        .header {
-            text-align: center;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
 
-        .header h2 {
-            margin: 0;
-            color: #0056b3;
-            letter-spacing: 2px;
-        }
+    .header h2 {
+      margin: 0;
+      color: #0056b3;
+      letter-spacing: 2px;
+    }
 
-        .body-layout {
-            display: table;
-            width: 100%;
-        }
+    .body-layout {
+      display: table;
+      width: 100%;
+    }
 
-        .content {
-            display: table-cell;
-            vertical-align: top;
-        }
+    .content {
+      display: table-cell;
+      vertical-align: top;
+    }
 
-        .content p {
-            margin: 10px 0;
-            font-size: 14px;
-            border-bottom: 1px solid #f9f9f9;
-            padding-bottom: 5px;
-        }
+    .content p {
+      margin: 10px 0;
+      font-size: 14px;
+      border-bottom: 1px solid #f9f9f9;
+      padding-bottom: 5px;
+    }
 
-        .label {
-            font-weight: bold;
-            color: #777;
-            text-transform: uppercase;
-            font-size: 10px;
-            display: block;
-            margin-bottom: 2px;
-        }
+    .label {
+      font-weight: bold;
+      color: #777;
+      text-transform: uppercase;
+      font-size: 10px;
+      display: block;
+      margin-bottom: 2px;
+    }
 
-        .value {
-            font-size: 16px;
-            color: #000;
-        }
+    .value {
+      font-size: 16px;
+      color: #000;
+    }
 
-        .qr-section {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: right;
-            width: 150px;
-        }
+    .qr-section {
+      display: table-cell;
+      vertical-align: middle;
+      text-align: right;
+      width: 150px;
+    }
 
-        .qr-section img {
-            width: 130px;
-            height: 130px;
-            border: 1px solid #eee;
-            padding: 5px;
-        }
+    .qr-section img {
+      width: 130px;
+      height: 130px;
+      border: 1px solid #eee;
+      padding: 5px;
+    }
 
-        .qr-text {
-            font-size: 9px;
-            margin-top: 8px;
-            color: #999;
-            text-align: center;
-        }
+    .qr-text {
+      font-size: 9px;
+      margin-top: 8px;
+      color: #999;
+      text-align: center;
+    }
 
-        .page-break {
-            page-break-after: always;
-        }
-    </style>
+    .page-break {
+      page-break-after: always;
+    }
+  </style>
 </head>
 <body>
 {% for item in tickets_with_qr %}
-    <div class="ticket-box">
-        <div class="header">
-            <h2>BOARDING PASS</h2>
-        </div>
-
-        <div class="body-layout">
-            <div class="content">
-                <p>
-                    <span class="label">Passenger</span>
-                    <span class="value">{{ item.ticket.effective_passenger_name }}</span>
-                </p>
-                <p>
-                    <span class="label">Flight Route</span>
-                    <span class="value">{{ item.ticket.flight.route.source.closest_big_city }} → {{ item.ticket.flight.route.destination.closest_big_city }}</span>
-                </p>
-                <p>
-                    <span class="label">Departure Time</span>
-                    <span class="value">{{ item.ticket.flight.departure_time|date:"d.m.Y H:i" }}</span>
-                </p>
-                <p>
-                    <span class="label">Seat Details</span>
-                    <span class="value">Row {{ item.ticket.row }}, Seat {{ item.ticket.seat }}</span>
-                </p>
-                <p>
-                    <span class="label">Aircraft</span>
-                    <span class="value">{{ item.ticket.flight.airplane.name }}</span>
-                </p>
-                <p>
-                    <span class="label">Order ID</span>
-                    <span class="value">#{{ order_id_display }}</span>
-                </p>
-            </div>
-
-            <div class="qr-section">
-                <img src="data:image/png;base64,{{ item.qr_code }}" alt="QR Code">
-                <p class="qr-text">OFFICIAL VALIDATION CODE</p>
-            </div>
-        </div>
+  <div class="ticket-box">
+    <div class="header">
+      <h2>BOARDING PASS</h2>
     </div>
 
-    {% if not forloop.last %}
-        <div class="page-break"></div>
-    {% endif %}
+    <div class="body-layout">
+      <div class="content">
+        <p>
+          <span class="label">Passenger</span>
+          <span class="value">{{ item.ticket.effective_passenger_name }}</span>
+        </p>
+        <p>
+          <span class="label">Flight Route</span>
+          <span
+              class="value">{{ item.ticket.flight.route.source.closest_big_city }} → {{ item.ticket.flight.route.destination.closest_big_city }}</span>
+        </p>
+        <p>
+          <span class="label">Departure Time</span>
+          <span class="value">{{ item.ticket.flight.departure_time|date:"d.m.Y H:i" }}</span>
+        </p>
+        <p>
+          <span class="label">Seat Details</span>
+          <span class="value">Row {{ item.ticket.row }}, Seat {{ item.ticket.seat }}</span>
+        </p>
+        <p>
+          <span class="label">Aircraft</span>
+          <span class="value">{{ item.ticket.flight.airplane.name }}</span>
+        </p>
+        <p>
+          <span class="label">Order ID</span>
+          <span class="value">#{{ order_id_display }}</span>
+        </p>
+      </div>
+
+      <div class="qr-section">
+        <img src="data:image/png;base64,{{ item.qr_code }}" alt="QR Code">
+        <p class="qr-text">OFFICIAL VALIDATION CODE</p>
+      </div>
+    </div>
+  </div>
+
+  {% if not forloop.last %}
+    <div class="page-break"></div>
+  {% endif %}
 {% endfor %}
 </body>
 </html>

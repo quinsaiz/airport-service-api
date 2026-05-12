@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from airport.models import Order
+from airport.models import Flight, Order
 from airport.tests.helpers import (
     detail_url,
     sample_airplane,
@@ -34,7 +34,7 @@ class PublicFlightApiTests(APITestCase):
         self.assertEqual(res.data["results"][0]["id"], flight_1.pk)
 
     def test_tickets_available_count(self) -> None:
-        """Ensure tickets_available is calculated correctly (capacity - booked tickets)."""
+        """Ensure tickets_available is calculated correctly (capacity — booked tickets)."""
 
         airplane = sample_airplane(name="Small", rows=2, seats_in_row=2)
         flight = sample_flight(airplane=airplane)
@@ -151,8 +151,6 @@ class AdminFlightApiTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
     def test_delete_flight(self) -> None:
-        from airport.models import Flight
-
         flight = sample_flight()
 
         res = self.client.delete(detail_url("flight", flight.pk))

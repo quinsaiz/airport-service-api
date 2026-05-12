@@ -1,74 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Your order has been confirmed!</title>
+  <meta charset="UTF-8">
+  <title>Your order has been confirmed!</title>
 </head>
-<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px;">
-<div style="max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+<body
+    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px;">
+<div
+    style="max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
 
-    <h2 style="color: #0056b3; text-align: center; margin-bottom: 25px;">Your order has been confirmed! ✈️</h2>
+  <h2 style="color: #0056b3; text-align: center; margin-bottom: 25px;">Your order has been confirmed! ✈️</h2>
 
-    <p>Hello, <strong>{{ passenger_name|default:user.email }}</strong>!</p>
-    <p>Thank you for choosing <strong>Airport Service</strong>. Your reservation details are below:</p>
+  <p>Hello, <strong>{{ passenger_name|default:user.email }}</strong>!</p>
+  <p>Thank you for choosing <strong>Airport Service</strong>. Your reservation details are below:</p>
 
-    <p style="font-size: 14px; color: #777;">Order Reference: <code
-            style="color: #0056b3; font-weight: bold;">{{ order_id_display }}</code></p>
+  <p style="font-size: 14px; color: #777;">Order Reference: <code
+      style="color: #0056b3; font-weight: bold;">{{ order_id_display }}</code></p>
 
-    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-        <thead>
-        <tr style="background-color: #f1f4f9;">
-            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Flight</th>
-            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Row</th>
-            <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Seat</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in tickets_with_qr %}
-            <tr>
-                <td style="padding: 12px; border: 1px solid #ddd;">
-                    <strong>{{ item.ticket.flight.route.source.closest_big_city }}
-                        → {{ item.ticket.flight.route.destination.closest_big_city }}</strong><br>
-                    <small style="color: #666;">{{ item.ticket.flight.departure_time|date:"d.m.Y H:i" }}</small><br>
-                    <small style="color: #555;">{{ item.ticket.effective_passenger_name }}</small>
-                </td>
-                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{{ item.ticket.row }}</td>
-                <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{{ item.ticket.seat }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
+  <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+    <thead>
+    <tr style="background-color: #f1f4f9;">
+      <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Flight</th>
+      <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Row</th>
+      <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Seat</th>
+    </tr>
+    </thead>
+    <tbody>
     {% for item in tickets_with_qr %}
-        <div style="margin: 30px 0; padding: 20px; border: 2px dashed #0056b3; border-radius: 10px; text-align: center; background-color: #f0f7ff;">
-            <h4 style="margin: 0 0 5px 0; color: #0056b3;">
-                {{ item.ticket.flight.route.source.closest_big_city }}
-                → {{ item.ticket.flight.route.destination.closest_big_city }}
-            </h4>
-            <p style="font-size: 13px; color: #444; margin: 0 0 10px 0;">
-                {{ item.ticket.effective_passenger_name }} · Row {{ item.ticket.row }}, Seat {{ item.ticket.seat }}
-            </p>
-            <img src="data:image/png;base64,{{ item.qr_code }}"
-                 alt="Ticket QR Code"
-                 style="width: 160px; height: 160px; border: 1px solid #ddd; padding: 5px; background: white;">
-            <div style="margin-top: 20px;">
-                <a href="{{ item.validation_url }}"
-                   style="background-color: #0056b3; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                    Verify Ticket
-                </a>
-            </div>
-        </div>
+      <tr>
+        <td style="padding: 12px; border: 1px solid #ddd;">
+          <strong>{{ item.ticket.flight.route.source.closest_big_city }}
+            → {{ item.ticket.flight.route.destination.closest_big_city }}</strong><br>
+          <small style="color: #666;">{{ item.ticket.flight.departure_time|date:"d.m.Y H:i" }}</small><br>
+          <small style="color: #555;">{{ item.ticket.effective_passenger_name }}</small>
+        </td>
+        <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{{ item.ticket.row }}</td>
+        <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{{ item.ticket.seat }}</td>
+      </tr>
     {% endfor %}
+    </tbody>
+  </table>
 
-    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border-top: 3px solid #0056b3;">
-        <p style="margin: 0; font-weight: bold; color: #0056b3;">We wish you a pleasant flight!</p>
-        <p style="margin: 10px 0 0; font-size: 12px; color: #666;">
-            Need help? Contact us at <a href="mailto:{{ support_email }}"
-                                        style="color: #0056b3; text-decoration: none;">{{ support_email }}</a>
-        </p>
-        <p style="margin: 5px 0 0; font-size: 11px; color: #999;">This is an automated system message. Please do not
-            reply to this email.</p>
+  {% for item in tickets_with_qr %}
+    <div
+        style="margin: 30px 0; padding: 20px; border: 2px dashed #0056b3; border-radius: 10px; text-align: center; background-color: #f0f7ff;">
+      <h4 style="margin: 0 0 5px 0; color: #0056b3;">
+        {{ item.ticket.flight.route.source.closest_big_city }}
+        → {{ item.ticket.flight.route.destination.closest_big_city }}
+      </h4>
+      <p style="font-size: 13px; color: #444; margin: 0 0 10px 0;">
+        {{ item.ticket.effective_passenger_name }} · Row {{ item.ticket.row }}, Seat {{ item.ticket.seat }}
+      </p>
+      <img src="data:image/png;base64,{{ item.qr_code }}"
+           alt="Ticket QR Code"
+           style="width: 160px; height: 160px; border: 1px solid #ddd; padding: 5px; background: white;">
+      <div style="margin-top: 20px;">
+        <a href="{{ item.validation_url }}"
+           style="background-color: #0056b3; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          Verify Ticket
+        </a>
+      </div>
     </div>
+  {% endfor %}
+
+  <div
+      style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border-top: 3px solid #0056b3;">
+    <p style="margin: 0; font-weight: bold; color: #0056b3;">We wish you a pleasant flight!</p>
+    <p style="margin: 10px 0 0; font-size: 12px; color: #666;">
+      Need help? Contact us at <a href="mailto:{{ support_email }}"
+                                  style="color: #0056b3; text-decoration: none;">{{ support_email }}</a>
+    </p>
+    <p style="margin: 5px 0 0; font-size: 11px; color: #999;">This is an automated system message. Please do not
+      reply to this email.</p>
+  </div>
 </div>
 </body>
 </html>

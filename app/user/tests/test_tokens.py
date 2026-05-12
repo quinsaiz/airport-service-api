@@ -6,6 +6,7 @@ from user.tests.helpers import create_active_user, create_inactive_user
 
 TOKEN_URL = reverse("user:token_obtain_pair")
 
+
 class TokenTests(APITestCase):
     def test_token_login_success(self) -> None:
         create_active_user(email="test@email.com", password="password123")

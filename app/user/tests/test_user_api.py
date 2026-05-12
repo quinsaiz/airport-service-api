@@ -10,6 +10,7 @@ from user.tests.helpers import create_active_user
 USER_CREATE_URL = reverse("user:create")
 MANAGE_URL = reverse("user:manage")
 
+
 class CreateUserTests(APITestCase):
     def test_create_user_success(self) -> None:
         payload = {"email": "test@email.com", "password": "password123"}

@@ -12,6 +12,7 @@ from user.verification_token import ALGORITHM, generate_verification_token, veri
 
 TOKEN_URL = reverse("user:token_obtain_pair")
 
+
 def verify_email_url(token: str) -> str:
     return reverse("user:verify-email", kwargs={"token": token})
 
