@@ -16,6 +16,9 @@ dependencies = [
     "gunicorn>=26.0.0",
     "weasyprint>=68.1",
     "qrcode[pil]>=8.2",
+    "cryptography>=48.0.0",
+    "httpx>=0.28.1",
+    "google-auth[requests]>=2.52.0",
 ]
 
 [dependency-groups]
@@ -145,6 +148,10 @@ plugins = [
 disallow_any_generics = false
 
 [[tool.mypy.overrides]]
+module = "user.oauth.google"
+disable_error_code = ["no-untyped-call"]
+
+[[tool.mypy.overrides]]
 module = "*.serializers"
 disable_error_code = ["var-annotated", "assignment", "no-any-return"]
 
@@ -153,7 +160,9 @@ module = "user.models"
 disable_error_code = ["assignment", "misc"]
 
 [[tool.mypy.overrides]]
-module = "airport.views"
+module = [
+    "airport.views",
+]
 disable_error_code = ["misc"]
 
 [tool.django-stubs]

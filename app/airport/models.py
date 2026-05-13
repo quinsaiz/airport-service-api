@@ -10,6 +10,9 @@ from django.utils import timezone
 class AirplaneType(models.Model):
     name = models.CharField(max_length=55)
 
+    class Meta:
+        ordering = ["name"]
+
     def __str__(self) -> str:
         return self.name
 
@@ -19,6 +22,9 @@ class Airplane(models.Model):
     rows = models.PositiveIntegerField()
     seats_in_row = models.PositiveIntegerField()
     airplane_type = models.ForeignKey("AirplaneType", on_delete=models.CASCADE, related_name="airplanes")
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self) -> str:
         return f"{self.name} (Type: {self.airplane_type.name})"
@@ -32,6 +38,9 @@ class Airport(models.Model):
     name = models.CharField(max_length=55)
     closest_big_city = models.CharField(max_length=55)
 
+    class Meta:
+        ordering = ["name"]
+
     def __str__(self) -> str:
         return f"{self.name} ({self.closest_big_city})"
 
@@ -41,21 +50,25 @@ class Crew(models.Model):
     last_name = models.CharField(max_length=55)
 
     class Meta:
+        ordering = ["last_name", "first_name"]
         verbose_name_plural = "Crew"
 
     def __str__(self) -> str:
         return self.full_name
 
     @property
-    @admin.display(ordering="first_name", description="Full Name")
+    @admin.display(ordering="last_name", description="Full Name")
     def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.last_name} {self.first_name}"
 
 
 class Route(models.Model):
     source = models.ForeignKey("Airport", on_delete=models.CASCADE, related_name="departure_routes")
     destination = models.ForeignKey("Airport", on_delete=models.CASCADE, related_name="arrival_routes")
     distance = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["source", "destination"]
 
     def __str__(self) -> str:
         return f"{self.source.name} -> {self.destination.name}"
@@ -86,6 +99,16 @@ class Order(models.Model):
     def __str__(self) -> str:
         return f"{self.created_at.strftime('%Y-%m-%d %H:%M:%S')} - {self.user.email}"
 
+    @property
+    @admin.display(description="Order ID")
+    def id_display(self) -> str:
+        return self.uuid.hex[:8]
+
+    @property
+    @admin.display(description="Created At")
+    def created_at_formatted(self) -> str:
+        return self.created_at.strftime("%Y-%m-%d %H:%M")
+
 
 class Ticket(models.Model):
     row = models.PositiveIntegerField()
@@ -96,7 +119,7 @@ class Ticket(models.Model):
     passenger_email = models.EmailField(blank=True)
 
     class Meta:
-        ordering = ["row", "seat"]
+        ordering = ["flight", "row", "seat"]
         constraints = [UniqueConstraint(fields=["row", "seat", "flight"], name="unique_row_seat_flight")]
 
     def __str__(self) -> str:

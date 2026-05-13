@@ -25,7 +25,7 @@ class AirportAdmin(admin.ModelAdmin):
 @admin.register(Crew)
 class CrewAdmin(admin.ModelAdmin):
     list_display = ("full_name",)
-    search_fields = ("first_name", "last_name")
+    search_fields = ("last_name", "first_name")
 
 
 @admin.register(Route)
@@ -59,14 +59,6 @@ class TicketInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    @admin.display(description="Order ID")
-    def id_display(self, obj: Order) -> str:
-        return str(obj.uuid)[:8]
-
-    @admin.display(description="Created At")
-    def created_at_formatted(self, obj: Order) -> str:
-        return obj.created_at.strftime("%Y-%m-%d %H:%M")
-
     list_display = ("id_display", "user", "created_at_formatted")
     list_select_related = ("user",)
     list_filter = ("created_at",)

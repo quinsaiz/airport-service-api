@@ -226,3 +226,7 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASSWORD", "email")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "2525"))
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
+GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
