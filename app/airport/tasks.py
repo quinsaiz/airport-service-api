@@ -62,7 +62,7 @@ def send_ticket_email(self: Any, order_id: int) -> None:
 
         passenger_name = user.get_full_name() or user.email
 
-        short_uuid = str(order.uuid)[:8]
+        short_uuid = order.uuid.hex[:8]
         pdf_filename = f"Ticket_{short_uuid}_{passenger_name}.pdf"
 
         tickets_with_qr = []
@@ -79,17 +79,17 @@ def send_ticket_email(self: Any, order_id: int) -> None:
             "passenger_name": passenger_name,
             "tickets_with_qr": tickets_with_qr,
             "order": order,
-            "order_id_display": str(order.uuid)[:8].upper(),
+            "order_id_display": short_uuid.upper(),
             "support_email": settings.SUPPORT_EMAIL,
         }
 
         pdf_html = render_to_string("emails/ticket_pdf.html", context)
         pdf_file = HTML(string=pdf_html).write_pdf()
 
-        subject = f"Your Flight Ticket - Order #{str(order.uuid)[:8].upper()}"
+        subject = f"Your Flight Ticket - Order #{short_uuid.upper()}"
         html_message = render_to_string("emails/ticket_confirmation.html", context)
         text_message = (
-            f"Thank you for your order #{str(order.uuid)[:8].upper()}. "
+            f"Thank you for your order #{short_uuid.upper()}. "
             f"Your tickets have been confirmed. "
             f"Please check the attached PDF for your boarding passes."
         )

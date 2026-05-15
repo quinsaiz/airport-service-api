@@ -41,7 +41,7 @@ class AirplaneTypeViewSet(viewsets.ModelViewSet):
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
-    queryset = Airplane.objects.select_related("airplane_type").order_by("id")
+    queryset = Airplane.objects.select_related("airplane_type")
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = DefaultPagination
 
@@ -52,14 +52,14 @@ class AirplaneViewSet(viewsets.ModelViewSet):
 
 
 class AirportViewSet(viewsets.ModelViewSet):
-    queryset = Airport.objects.order_by("id")
+    queryset = Airport.objects.all()
     serializer_class = AirportSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = DefaultPagination
 
 
 class CrewViewSet(viewsets.ModelViewSet):
-    queryset = Crew.objects.order_by("last_name", "first_name")
+    queryset = Crew.objects.all()
     serializer_class = CrewSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = DefaultPagination
@@ -74,7 +74,7 @@ class CrewViewSet(viewsets.ModelViewSet):
     )
 )
 class RouteViewSet(viewsets.ModelViewSet):
-    queryset = Route.objects.select_related("source", "destination").order_by("id")
+    queryset = Route.objects.select_related("source", "destination")
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = DefaultPagination
 
@@ -120,7 +120,6 @@ class FlightViewSet(viewsets.ModelViewSet):
                 F("airplane__rows") * F("airplane__seats_in_row") - Count("tickets", distinct=True), 0
             )
         )
-        .order_by("-departure_time")
     )
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = DefaultPagination
