@@ -11,12 +11,14 @@ def verify_github_token(code: str) -> OAuthUserData:
             json={"client_id": settings.GITHUB_CLIENT_ID, "client_secret": settings.GITHUB_CLIENT_SECRET, "code": code},
             headers={"Accept": "application/json"},
         )
-        token_response.raise_for_status()
-        access_token = token_response.json()["access_token"]
+        token_data = token_response.json()
+        if "error" in token_data:
+            raise ValueError(f"GitHub token error: {token_data}")
+        access_token = token_data["access_token"]
 
         user_response = client.get(
-            "https://api.github.com/user/",
-            headers={"Authorization": f"Bearer {access_token}"},
+            "https://api.github.com/user",
+            headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
         )
         user_response.raise_for_status()
         user_data = user_response.json()
@@ -24,7 +26,7 @@ def verify_github_token(code: str) -> OAuthUserData:
         if not user_data.get("email"):
             emails_response = client.get(
                 "https://api.github.com/user/emails",
-                headers={"Authorization": f"Bearer {access_token}"},
+                headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
             )
             emails_response.raise_for_status()
             emails = emails_response.json()

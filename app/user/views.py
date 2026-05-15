@@ -120,7 +120,7 @@ class GitHubLoginView(APIView):
 
         try:
             oauth_data = verify_github_token(code)
-        except (httpx.HTTPError, KeyError, StopIteration) as e:
+        except (httpx.HTTPError, KeyError, ValueError, StopIteration) as e:
             logger.warning("GitHub OAuth failed %s", e)
             return Response({"detail": "Invalid GitHub code."}, status=status.HTTP_400_BAD_REQUEST)
 
